@@ -56,6 +56,29 @@ var _slide := 1.0
 var _slide_dur := 0.01
 var _prev_x := 0.0
 
+var time_scale := 1.0
+var ground_y := 0.0
+var hitstop := 0.0
+var frozen := 0.0
+var airborne := false
+var vy := 0.0
+var air_vx := 0.0
+var grav := 1600.0
+var big_launch := false
+var fall_spent := false
+var just_landed := false
+var land_big := false
+var land_hit := false
+var land_lag := 0.12
+var slipping := false
+var chain := ""
+var sheet_move: Dictionary = {}
+var use_module := false
+var next_anim := ""
+var swapped := false
+var action_age := 0.0
+var strike_at := -1.0
+
 
 func _ready() -> void:
 	var path := "res://assets/char_3/bare.png" if bare else "res://assets/char_3/body.png"
@@ -73,6 +96,7 @@ func _ready() -> void:
 	_sprite.z_index = 1
 	add_child(_sprite)
 	_prev_x = position.x
+	ground_y = position.y
 	play("idle")
 
 
@@ -86,7 +110,7 @@ func play(anim_name: String) -> void:
 	_frame = 0
 	_struck = false
 	strike_ready = false
-	z_index = 1 if anim_name in ["idle", "walk", "run", "crouch", "down", "getup"] else 3
+	z_index = 4 if airborne else (1 if anim_name in ["idle", "walk", "run", "crouch", "down", "getup"] else 3)
 	_apply()
 
 
@@ -105,7 +129,7 @@ func commit_time(anim_name: String, requested: float) -> float:
 
 
 func can_act() -> bool:
-	return script_open and not reacting
+	return script_open and not reacting and not slipping and not airborne and frozen <= 0.0 and hitstop <= 0.0
 
 
 func exposed() -> bool:
@@ -117,14 +141,23 @@ func go(anim_name: String, target_x: float, move_time: float) -> bool:
 		return false
 	reacting = false
 	lock = 0.0
+	use_module = false
+	strike_at = -1.0
+	next_anim = ""
 	_start(anim_name, target_x, commit_time(anim_name, move_time))
 	return true
 
 
-func react(anim_name: String, target_x: float, _move_time: float, _hold: float) -> bool:
-	if reacting:
+func react(anim_name: String, target_x: float, _move_time: float = 0.2, _hold: float = 0.5, refresh: bool = false, stun: float = -1.0) -> bool:
+	if reacting and not refresh:
 		return false
-	var dur := clip_cycle(anim_name)
+	_plant()
+	slipping = false
+	use_module = false
+	next_anim = ""
+	chain = ""
+	sheet_move = {}
+	var dur := clip_cycle(anim_name) if stun < 0.0 else stun
 	reacting = true
 	lock = dur
 	_start(anim_name, target_x, dur)
@@ -138,7 +171,87 @@ func relax() -> void:
 	script_open = true
 	plan = PackedStringArray()
 	_slide = 1.0
+	hitstop = 0.0
+	frozen = 0.0
+	slipping = false
+	chain = ""
+	sheet_move = {}
+	use_module = false
+	next_anim = ""
+	swapped = false
+	action_age = 0.0
+	strike_at = -1.0
+	just_landed = false
+	fall_spent = false
+	_plant()
 	play("idle")
+	if _sprite != null:
+		_sprite.flip_h = not face_right
+
+
+func start_module(anim_name: String, target_x: float, busy_time: float, move_time: float, hit_time: float, follow_anim: String) -> void:
+	if frozen > 0.0 or airborne:
+		return
+	reacting = false
+	slipping = false
+	lock = 0.0
+	use_module = true
+	next_anim = follow_anim
+	swapped = false
+	action_age = 0.0
+	strike_at = hit_time
+	script_open = false
+	busy = busy_time
+	_move(anim_name, target_x, maxf(move_time, 0.04))
+	if move_time <= 0.0:
+		_from = position.x
+		_to = position.x
+		_slide = 1.0
+
+
+func leave_active(active_left: float) -> void:
+	busy = minf(busy, maxf(active_left, 0.04))
+
+
+func begin_slip(dir: float, distance: float, time: float) -> void:
+	if airborne:
+		return
+	chain = ""
+	sheet_move = {}
+	use_module = false
+	next_anim = ""
+	strike_at = -1.0
+	reacting = false
+	slipping = true
+	lock = 0.0
+	var dest := clampf(position.x + dir * distance, 80.0, 1200.0)
+	script_open = false
+	busy = time
+	_move("down", dest, time)
+
+
+func launch_arc(hx: float, hy: float, gravity: float, big: bool, recover: float) -> void:
+	if ground_y == 0.0:
+		ground_y = position.y
+	airborne = true
+	big_launch = big
+	fall_spent = false
+	grav = gravity
+	vy = -absf(hy)
+	air_vx = hx
+	land_lag = recover
+	slipping = false
+	reacting = false
+	use_module = false
+	next_anim = ""
+	chain = ""
+	sheet_move = {}
+	strike_at = -1.0
+	strike_ready = false
+	script_open = false
+	busy = 0.0
+	lock = 0.0
+	play("hop")
 
 
 func _start(anim_name: String, target_x: float, dur: float) -> void:
@@ -156,11 +269,49 @@ func _move(anim_name: String, target_x: float, move_time: float) -> void:
 	_slide_dur = maxf(move_time, 0.04)
 
 
+func _plant() -> void:
+	airborne = false
+	big_launch = false
+	air_vx = 0.0
+	vy = 0.0
+	if ground_y != 0.0:
+		position.y = ground_y
+
+
+func _swap_anim(anim_name: String) -> void:
+	var clip: Dictionary = CLIPS.get(anim_name, CLIPS["idle"])
+	anim = anim_name if CLIPS.has(anim_name) else "idle"
+	_frames = clip["frames"]
+	_loop = bool(clip["loop"])
+	_anim_len = clip_cycle(anim)
+	_anim_age = 0.0
+	_frame = 0
+	z_index = 3
+	_apply()
+
+
 func chest() -> Vector2:
 	return global_position + Vector2(0, -78)
 
 
 func _process(delta: float) -> void:
+	delta *= time_scale
+	if hitstop > 0.0:
+		hitstop = maxf(hitstop - delta, 0.0)
+		vx = 0.0
+		_prev_x = position.x
+		queue_redraw()
+		return
+	if frozen > 0.0:
+		frozen = maxf(frozen - delta, 0.0)
+		vx = 0.0
+		_prev_x = position.x
+		queue_redraw()
+		return
+	if airborne:
+		_fly(delta)
+		queue_redraw()
+		return
 	var before := _anim_age
 	_anim_age += delta
 	var just_opened := false
@@ -170,6 +321,8 @@ func _process(delta: float) -> void:
 		busy = maxf(busy - delta, 0.0)
 		if busy == 0.0:
 			reacting = false
+			slipping = false
+			use_module = false
 			if _loop and _anim_len > 0.0:
 				var cycles := maxi(int(round(_anim_age / _anim_len)), 1)
 				_anim_age = float(cycles) * _anim_len
@@ -183,7 +336,15 @@ func _process(delta: float) -> void:
 	if _loop and script_open and not just_opened and not reacting and busy <= 0.0 and _anim_len > 0.0:
 		if fposmod(_anim_age, _anim_len) > 0.05:
 			script_open = false
-	if anim in ATTACKS and not _struck and _anim_age >= _anim_len * 0.62:
+	if use_module:
+		action_age += delta
+		if not swapped and strike_at >= 0.0 and action_age >= strike_at:
+			swapped = true
+			if next_anim != "":
+				_swap_anim(next_anim)
+			_struck = true
+			strike_ready = true
+	elif anim in ATTACKS and not _struck and _anim_age >= _anim_len * 0.62:
 		_struck = true
 		strike_ready = true
 	if _slide < 1.0:
@@ -195,6 +356,36 @@ func _process(delta: float) -> void:
 	_sync_frame()
 	_apply()
 	queue_redraw()
+
+
+func _fly(delta: float) -> void:
+	var before := position.x
+	vy += grav * delta
+	position.y += vy * delta
+	position.x = clampf(position.x + air_vx * delta, 80.0, 1200.0)
+	vx = (position.x - before) / maxf(delta, 0.001)
+	_prev_x = position.x
+	_anim_age += delta
+	_sync_frame()
+	_apply()
+	if position.y < ground_y or vy < 0.0:
+		z_index = 4
+		return
+	var was_big := big_launch
+	var did_hit := fall_spent
+	position.y = ground_y
+	airborne = false
+	big_launch = false
+	air_vx = 0.0
+	vy = 0.0
+	fall_spent = false
+	just_landed = true
+	land_big = was_big
+	land_hit = did_hit
+	busy = land_lag
+	script_open = false
+	use_module = false
+	play("idle")
 
 
 func _sync_frame() -> void:
@@ -211,14 +402,21 @@ func _apply() -> void:
 
 
 func _draw() -> void:
+	var lift := 0.0
+	if airborne and ground_y != 0.0:
+		lift = ground_y - position.y
 	var points := PackedVector2Array()
+	var shade := clampf(1.0 - lift / 180.0, 0.35, 1.0)
 	for i in 14:
 		var angle := TAU * float(i) / 14.0
-		points.append(Vector2(cos(angle) * 36.0, sin(angle) * 10.0 - 2.0))
+		points.append(Vector2(cos(angle) * 36.0 * shade, sin(angle) * 10.0 * shade - 2.0 + lift))
 	draw_colored_polygon(points, Color(0, 0, 0, 0.35))
+	if frozen > 0.0:
+		var pulse := 0.45 + 0.55 * absf(sin(Time.get_ticks_msec() * 0.02))
+		draw_arc(Vector2(0, -92), 58.0, 0.0, TAU, 36, Color(0.62, 0.86, 1.0, 0.35 + 0.45 * pulse), 5.0)
 	if glow <= 0:
 		return
 	var fast := glow == 2
-	var pulse := absf(sin(Time.get_ticks_msec() * 0.001 * (30.0 if fast else 7.0)))
-	var ink := Color(1, 0.95, 0.55, 0.45 + 0.55 * pulse) if fast else Color(1, 0.45, 0.16, 0.35 + 0.25 * pulse)
+	var glow_pulse := absf(sin(Time.get_ticks_msec() * 0.001 * (30.0 if fast else 7.0)))
+	var ink := Color(1, 0.95, 0.55, 0.45 + 0.55 * glow_pulse) if fast else Color(1, 0.45, 0.16, 0.35 + 0.25 * glow_pulse)
 	draw_arc(Vector2(0, -92), 62.0 if fast else 48.0, 0.0, TAU, 36, ink, 8.0 if fast else 4.0)

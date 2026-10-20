@@ -1,0 +1,19 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://cpi2m8044q4an"
+
+[deps]
+
+files=["res://docs/攻擊模組 - 攻擊模組.模組.translation", "res://docs/攻擊模組 - 攻擊模組.動畫.translation", "res://docs/攻擊模組 - 攻擊模組.前搖.translation", "res://docs/攻擊模組 - 攻擊模組.有效.translation", "res://docs/攻擊模組 - 攻擊模組.後搖.translation", "res://docs/攻擊模組 - 攻擊模組.接觸範圍.translation", "res://docs/攻擊模組 - 攻擊模組.傷害.translation", "res://docs/攻擊模組 - 攻擊模組.受擊時長.translation", "res://docs/攻擊模組 - 攻擊模組.擊退.translation", "res://docs/攻擊模組 - 攻擊模組.頓幀.translation", "res://docs/攻擊模組 - 攻擊模組.位移.translation", "res://docs/攻擊模組 - 攻擊模組.位移上限.translation", "res://docs/攻擊模組 - 攻擊模組.啟動.translation", "res://docs/攻擊模組 - 攻擊模組.打中可接.translation", "res://docs/攻擊模組 - 攻擊模組.最近.translation", "res://docs/攻擊模組 - 攻擊模組.最遠.translation", "res://docs/攻擊模組 - 攻擊模組.速度門檻.translation", "res://docs/攻擊模組 - 攻擊模組.水平.translation", "res://docs/攻擊模組 - 攻擊模組.向上.translation", "res://docs/攻擊模組 - 攻擊模組.大拋水平.translation", "res://docs/攻擊模組 - 攻擊模組.大拋向上.translation", "res://docs/攻擊模組 - 攻擊模組.重力.translation"]
+
+source_file="res://docs/攻擊模組 - 攻擊模組.csv"
+dest_files=["res://docs/攻擊模組 - 攻擊模組.模組.translation", "res://docs/攻擊模組 - 攻擊模組.動畫.translation", "res://docs/攻擊模組 - 攻擊模組.前搖.translation", "res://docs/攻擊模組 - 攻擊模組.有效.translation", "res://docs/攻擊模組 - 攻擊模組.後搖.translation", "res://docs/攻擊模組 - 攻擊模組.接觸範圍.translation", "res://docs/攻擊模組 - 攻擊模組.傷害.translation", "res://docs/攻擊模組 - 攻擊模組.受擊時長.translation", "res://docs/攻擊模組 - 攻擊模組.擊退.translation", "res://docs/攻擊模組 - 攻擊模組.頓幀.translation", "res://docs/攻擊模組 - 攻擊模組.位移.translation", "res://docs/攻擊模組 - 攻擊模組.位移上限.translation", "res://docs/攻擊模組 - 攻擊模組.啟動.translation", "res://docs/攻擊模組 - 攻擊模組.打中可接.translation", "res://docs/攻擊模組 - 攻擊模組.最近.translation", "res://docs/攻擊模組 - 攻擊模組.最遠.translation", "res://docs/攻擊模組 - 攻擊模組.速度門檻.translation", "res://docs/攻擊模組 - 攻擊模組.水平.translation", "res://docs/攻擊模組 - 攻擊模組.向上.translation", "res://docs/攻擊模組 - 攻擊模組.大拋水平.translation", "res://docs/攻擊模組 - 攻擊模組.大拋向上.translation", "res://docs/攻擊模組 - 攻擊模組.重力.translation"]
+
+[params]
+
+compress=1
+delimiter=0
+unescape_keys=false
+unescape_translations=true

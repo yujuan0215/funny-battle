@@ -1,0 +1,16 @@
+[gd_scene load_steps=3 format=3 uid="uid://bbananascene1"]
+
+[ext_resource type="Script" path="res://scripts/banana.gd" id="1_banana"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_peel"]
+size = Vector2(48, 28)
+
+[node name="Banana" type="Area2D"]
+collision_layer = 8
+collision_mask = 2
+monitoring = true
+monitorable = false
+script = ExtResource("1_banana")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_peel")

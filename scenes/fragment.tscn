@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3 uid="uid://bfragment0001"]
+
+[ext_resource type="Script" path="res://scripts/fragment.gd" id="1_fragment"]
+
+[node name="Fragment" type="CharacterBody2D"]
+collision_layer = 1
+collision_mask = 0
+motion_mode = 1
+script = ExtResource("1_fragment")

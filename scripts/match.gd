@@ -537,7 +537,9 @@ func _build_hud() -> void:
 	watch.size = Vector2(220, 56)
 	watch.focus_mode = Control.FOCUS_NONE
 	watch.pressed.connect(func() -> void:
-		preload("res://scripts/duel.gd").qte = false
+		var duel := preload("res://scripts/duel.gd")
+		duel.qte = false
+		duel.brawl = false
 		get_tree().change_scene_to_file("res://scenes/duel.tscn")
 	)
 	_paint_button(watch, false, true)
@@ -549,11 +551,28 @@ func _build_hud() -> void:
 	flash.size = Vector2(220, 56)
 	flash.focus_mode = Control.FOCUS_NONE
 	flash.pressed.connect(func() -> void:
-		preload("res://scripts/duel.gd").qte = true
+		var duel := preload("res://scripts/duel.gd")
+		duel.qte = true
+		duel.brawl = false
 		get_tree().change_scene_to_file("res://scenes/duel.tscn")
 	)
 	_paint_button(flash, false, true)
 	_start_layer.add_child(flash)
+	var melee := Button.new()
+	melee.text = "大亂鬥"
+	melee.position = Vector2(930, 530)
+	melee.custom_minimum_size = Vector2(180, 56)
+	melee.size = Vector2(180, 56)
+	melee.focus_mode = Control.FOCUS_NONE
+	melee.pressed.connect(func() -> void:
+		var duel := preload("res://scripts/duel.gd")
+		duel.qte = false
+		duel.brawl = true
+		duel.brawl_count = 4
+		get_tree().change_scene_to_file("res://scenes/duel.tscn")
+	)
+	_paint_button(melee, false, true)
+	_start_layer.add_child(melee)
 
 	_end_layer = Control.new()
 	_end_layer.set_anchors_preset(Control.PRESET_FULL_RECT)

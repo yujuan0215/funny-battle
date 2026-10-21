@@ -22,13 +22,22 @@ const CLIPS := {
 	"power": {"frames": [Vector2i(0, 5), Vector2i(1, 5), Vector2i(2, 5)], "fps": 8.0, "loop": false},
 	"strike": {"frames": [Vector2i(9, 5), Vector2i(10, 5), Vector2i(11, 5)], "fps": 12.0, "loop": false},
 	"mix": {"frames": [Vector2i(8, 0), Vector2i(9, 0), Vector2i(10, 0), Vector2i(11, 0), Vector2i(12, 0), Vector2i(13, 0)], "fps": 13.0, "loop": false},
+	"rise": {"frames": [Vector2i(0, 7), Vector2i(1, 7), Vector2i(2, 7)], "fps": 10.0, "loop": true},
 }
+
+const ROSTER: Array[Dictionary] = [
+	{"id": "armor", "label": "藍甲", "path": "res://assets/chars/char_3/body.png"},
+	{"id": "bare", "label": "卸甲", "path": "res://assets/chars/char_3/bare.png"},
+	{"id": "yellow", "label": "黃髮", "path": "res://assets/chars/char_4/body.png"},
+	{"id": "silver", "label": "銀髮", "path": "res://assets/chars/char_5/body.png"},
+]
 
 @export var display_name := "穿甲"
 @export var bare := false
 @export var face_right := false
 
 var sheet: Texture2D
+var sheet_id := "armor"
 
 var _sprite: Sprite2D
 var _frames: Array = CLIPS["idle"]["frames"]
@@ -65,6 +74,8 @@ var vy := 0.0
 var air_vx := 0.0
 var grav := 1600.0
 var big_launch := false
+var fall_armed := false
+var fall_age := 0.0
 var fall_spent := false
 var just_landed := false
 var land_big := false
@@ -78,12 +89,17 @@ var next_anim := ""
 var swapped := false
 var action_age := 0.0
 var strike_at := -1.0
+var shot_frame := -1
+var hp := 10
+var hp_max := 10
+var out := false
+var goal := false
+var show_hp := true
 
 
 func _ready() -> void:
-	var path := "res://assets/char_3/bare.png" if bare else "res://assets/char_3/body.png"
-	sheet = load(path)
 	_sprite = Sprite2D.new()
+	use_sheet("bare" if bare else "armor")
 	_sprite.texture = sheet
 	_sprite.centered = true
 	_sprite.region_enabled = true
@@ -98,6 +114,34 @@ func _ready() -> void:
 	_prev_x = position.x
 	ground_y = position.y
 	play("idle")
+
+
+func use_sheet(id: String) -> void:
+	for entry in ROSTER:
+		if str(entry["id"]) != id:
+			continue
+		sheet_id = id
+		bare = id == "bare"
+		sheet = load(str(entry["path"]))
+		if _sprite != null:
+			_sprite.texture = sheet
+		return
+
+
+func firing_beam() -> bool:
+	return use_module and anim == "heavy" and shot_frame >= 0 and _frame >= shot_frame and str(sheet_move.get("id", "")) == "蓄力"
+
+
+func glove_tips() -> Array[Vector2]:
+	var facing := 1.0 if face_right else -1.0
+	var tips: Array[Vector2] = []
+	# 蓄力最後一格，兩隻手套的前端。格子座標，原圖朝右。
+	var gloves: Array[Vector2] = [Vector2(50, 31), Vector2(50, 40)]
+	for glove in gloves:
+		var x := position.x + (glove.x + 0.5 - 32.0) * SCALE * facing
+		var y := position.y + (glove.y + 0.5 - 32.0) * SCALE - FOOT * SCALE
+		tips.append(Vector2(x, y))
+	return tips
 
 
 func play(anim_name: String) -> void:
@@ -129,7 +173,7 @@ func commit_time(anim_name: String, requested: float) -> float:
 
 
 func can_act() -> bool:
-	return script_open and not reacting and not slipping and not airborne and frozen <= 0.0 and hitstop <= 0.0
+	return not out and script_open and not reacting and not slipping and not airborne and frozen <= 0.0 and hitstop <= 0.0
 
 
 func exposed() -> bool:
@@ -143,6 +187,7 @@ func go(anim_name: String, target_x: float, move_time: float) -> bool:
 	lock = 0.0
 	use_module = false
 	strike_at = -1.0
+	shot_frame = -1
 	next_anim = ""
 	_start(anim_name, target_x, commit_time(anim_name, move_time))
 	return true
@@ -181,7 +226,12 @@ func relax() -> void:
 	swapped = false
 	action_age = 0.0
 	strike_at = -1.0
+	shot_frame = -1
 	just_landed = false
+	hp = hp_max
+	out = false
+	fall_armed = false
+	fall_age = 0.0
 	fall_spent = false
 	_plant()
 	play("idle")
@@ -200,6 +250,7 @@ func start_module(anim_name: String, target_x: float, busy_time: float, move_tim
 	swapped = false
 	action_age = 0.0
 	strike_at = hit_time
+	shot_frame = -1
 	script_open = false
 	busy = busy_time
 	_move(anim_name, target_x, maxf(move_time, 0.04))
@@ -221,6 +272,7 @@ func begin_slip(dir: float, distance: float, time: float) -> void:
 	use_module = false
 	next_anim = ""
 	strike_at = -1.0
+	shot_frame = -1
 	reacting = false
 	slipping = true
 	lock = 0.0
@@ -235,6 +287,8 @@ func launch_arc(hx: float, hy: float, gravity: float, big: bool, recover: float)
 		ground_y = position.y
 	airborne = true
 	big_launch = big
+	fall_armed = false
+	fall_age = 0.0
 	fall_spent = false
 	grav = gravity
 	vy = -absf(hy)
@@ -247,11 +301,15 @@ func launch_arc(hx: float, hy: float, gravity: float, big: bool, recover: float)
 	chain = ""
 	sheet_move = {}
 	strike_at = -1.0
+	shot_frame = -1
 	strike_ready = false
 	script_open = false
 	busy = 0.0
 	lock = 0.0
-	play("hop")
+	if big:
+		play("rise")
+	else:
+		play("hop")
 
 
 func _start(anim_name: String, target_x: float, dur: float) -> void:
@@ -272,6 +330,8 @@ func _move(anim_name: String, target_x: float, move_time: float) -> void:
 func _plant() -> void:
 	airborne = false
 	big_launch = false
+	fall_armed = false
+	fall_age = 0.0
 	air_vx = 0.0
 	vy = 0.0
 	if ground_y != 0.0:
@@ -290,12 +350,31 @@ func _swap_anim(anim_name: String) -> void:
 	_apply()
 
 
+func _sample_ground() -> void:
+	var host := get_parent()
+	if host == null or not host.has_method("ground_height"):
+		return
+	ground_y = host.ground_height(position.x, position.y)
+
+
 func chest() -> Vector2:
 	return global_position + Vector2(0, -78)
 
 
 func _process(delta: float) -> void:
 	delta *= time_scale
+	if not airborne:
+		var feet := position.y
+		_sample_ground()
+		if ground_y > feet + 36.0:
+			airborne = true
+			vy = 80.0
+			air_vx = 0.0
+			big_launch = false
+			fall_armed = false
+			fall_spent = false
+		else:
+			position.y = ground_y
 	if hitstop > 0.0:
 		hitstop = maxf(hitstop - delta, 0.0)
 		vx = 0.0
@@ -342,8 +421,9 @@ func _process(delta: float) -> void:
 			swapped = true
 			if next_anim != "":
 				_swap_anim(next_anim)
-			_struck = true
-			strike_ready = true
+			if shot_frame < 0:
+				_struck = true
+				strike_ready = true
 	elif anim in ATTACKS and not _struck and _anim_age >= _anim_len * 0.62:
 		_struck = true
 		strike_ready = true
@@ -355,6 +435,9 @@ func _process(delta: float) -> void:
 	_prev_x = position.x
 	_sync_frame()
 	_apply()
+	if use_module and swapped and shot_frame >= 0 and not _struck and _frame >= shot_frame:
+		_struck = true
+		strike_ready = true
 	queue_redraw()
 
 
@@ -365,9 +448,17 @@ func _fly(delta: float) -> void:
 	position.x = clampf(position.x + air_vx * delta, 80.0, 1200.0)
 	vx = (position.x - before) / maxf(delta, 0.001)
 	_prev_x = position.x
+	# 大拋上升播被拋起的翻滾，過了最高點才換成下落。
+	if big_launch and not fall_armed and vy >= 0.0 and position.y < ground_y:
+		fall_armed = true
+		fall_age = 0.0
+		play("hop")
+	if big_launch and fall_armed:
+		fall_age += delta
 	_anim_age += delta
 	_sync_frame()
 	_apply()
+	_sample_ground()
 	if position.y < ground_y or vy < 0.0:
 		z_index = 4
 		return
@@ -376,6 +467,8 @@ func _fly(delta: float) -> void:
 	position.y = ground_y
 	airborne = false
 	big_launch = false
+	fall_armed = false
+	fall_age = 0.0
 	air_vx = 0.0
 	vy = 0.0
 	fall_spent = false

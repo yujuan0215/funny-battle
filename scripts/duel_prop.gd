@@ -53,17 +53,16 @@ func _draw() -> void:
 		])
 		draw_colored_polygon(peel, Color(0.98, 0.84, 0.12, fade))
 		draw_polyline(PackedVector2Array([peel[0], peel[1], peel[2], peel[3], peel[0]]), Color(0.08, 0.08, 0.08, fade), 3.0, true)
-		return
-	if kind == "spring":
+	elif kind == "spring":
 		var ink := Color(0.08, 0.08, 0.08)
 		draw_line(Vector2(-26, 10), Vector2(-13, -12), ink, 5.0)
 		draw_line(Vector2(-13, -12), Vector2(0, 10), ink, 5.0)
 		draw_line(Vector2(0, 10), Vector2(13, -12), ink, 5.0)
 		draw_line(Vector2(13, -12), Vector2(26, 10), ink, 5.0)
 		draw_line(Vector2(-30, 12), Vector2(30, 12), Color(0.35, 0.38, 0.42), 4.0)
-		return
-	var pulse := 0.55 + 0.45 * absf(sin(Time.get_ticks_msec() * 0.012))
-	var ink := Color(0.55, 0.82, 1.0, 0.18 + 0.2 * pulse)
-	draw_arc(Vector2(0, 48), radius, 0.0, TAU, 48, ink, 3.0)
-	draw_arc(Vector2(0, 48), radius * pulse, PI, TAU, 24, Color(0.75, 0.92, 1.0, 0.85), 4.0)
-	draw_line(Vector2(0, 48 - radius), Vector2(0, 48 + radius * 0.35), Color(0.7, 0.9, 1.0, 0.5), 2.0)
+	else:
+		var pulse := 0.55 + 0.45 * absf(sin(Time.get_ticks_msec() * 0.012))
+		var ink := Color(0.55, 0.82, 1.0, 0.18 + 0.2 * pulse)
+		draw_arc(Vector2(0, 48), radius, 0.0, TAU, 48, ink, 3.0)
+		draw_arc(Vector2(0, 48), radius * pulse, PI, TAU, 24, Color(0.75, 0.92, 1.0, 0.85), 4.0)
+		draw_line(Vector2(0, 48 - radius), Vector2(0, 48 + radius * 0.35), Color(0.7, 0.9, 1.0, 0.5), 2.0)

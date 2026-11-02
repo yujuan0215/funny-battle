@@ -2,3 +2,6 @@
 *.translation
 .DS_Store
 tmp/
+
+# Microsoft Office temporary lock files
+~$*

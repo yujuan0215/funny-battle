@@ -74,8 +74,7 @@ func _ready() -> void:
 		_lab.tooltip_text = "試驗場"
 		_add_icon(_lab, "flask")
 		header.add_child(_lab)
-	_back = _button("", _on_back)
-	_add_icon(_back, "back")
+	_back = _button("返回", _on_back)
 	_back.name = "Back"
 	_back.tooltip_text = "返回"
 	header.add_child(_back)
@@ -228,8 +227,7 @@ func _show_blueprint(chapter: Dictionary) -> void:
 	detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	stack.add_child(detail)
 	stack.add_child(_label("規劃中", 17, Color("b7a983")))
-	var back := _button("", _close_blueprint)
-	_add_icon(back, "back")
+	var back := _button("返回", _close_blueprint)
 	stack.add_child(back)
 	for direction in ["left", "right", "top", "bottom"]:
 		back.set("focus_neighbor_" + direction, back.get_path())

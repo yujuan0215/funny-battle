@@ -15,6 +15,166 @@
       "arena_source_crop": "top 70 percent",
       "status": "prototype target; exact pixel grid and palette not approved for production",
       "source": "built-in image_gen"
+    },
+    {
+      "file": "assets/environments/valley-arena.png",
+      "size": [
+        1672,
+        941
+      ],
+      "bytes": 2079599,
+      "sha256": "63da04171b58e9731914b896836c494ca767a2c42b3801a9309057848c3ad758",
+      "chunk_checksums_valid": true,
+      "alpha_required": false,
+      "filter": "nearest",
+      "arena_source_crop": "top 80 percent; darkest gameplay foreground remains engine-drawn",
+      "source": "built-in imagegen, style reference forest-outpost.png",
+      "source_output": "exec-364c29a1-fbb7-4fea-ae56-7eec6b33be89.png",
+      "prompt_file": "chapter-background-prompts.md"
+    },
+    {
+      "file": "assets/environments/clock-arena.png",
+      "size": [
+        1672,
+        941
+      ],
+      "bytes": 2309213,
+      "sha256": "bf2f36db22d132d5048cb0a163c638e175d584c66e139aea48ece43f44dfca2d",
+      "chunk_checksums_valid": true,
+      "alpha_required": false,
+      "filter": "nearest",
+      "arena_source_crop": "top 80 percent; darkest gameplay foreground remains engine-drawn",
+      "source": "built-in imagegen, style reference forest-outpost.png",
+      "source_output": "exec-0c464eff-0e01-404c-bdf8-c87a7a5365c2.png",
+      "prompt_file": "chapter-background-prompts.md"
+    },
+    {
+      "file": "assets/environments/ice-arena.png",
+      "size": [
+        1672,
+        941
+      ],
+      "bytes": 2429678,
+      "sha256": "ec16c66153593de9ecd52448896d729417c2d2ba57b6de724caae869f8681def",
+      "chunk_checksums_valid": true,
+      "alpha_required": false,
+      "filter": "nearest",
+      "arena_source_crop": "top 80 percent; darkest gameplay foreground remains engine-drawn",
+      "source": "built-in imagegen, style reference forest-outpost.png",
+      "source_output": "exec-40636ebe-575b-4c4b-b426-cccf72ee5ba4.png",
+      "prompt_file": "chapter-background-prompts.md"
+    },
+    {
+      "file": "assets/environments/forge-arena.png",
+      "size": [
+        1672,
+        941
+      ],
+      "bytes": 2136093,
+      "sha256": "008edb324ffdce79e485a269142998c670acbf047c1db3609d4819b8f8744670",
+      "chunk_checksums_valid": true,
+      "alpha_required": false,
+      "filter": "nearest",
+      "arena_source_crop": "top 80 percent; darkest gameplay foreground remains engine-drawn",
+      "source": "built-in imagegen, style reference forest-outpost.png",
+      "source_output": "exec-b842f12d-3507-4187-84b3-31635da20fc3.png",
+      "prompt_file": "chapter-background-prompts.md"
+    },
+    {
+      "file": "assets/environments/tower-arena.png",
+      "size": [
+        1672,
+        941
+      ],
+      "bytes": 2371590,
+      "sha256": "185769494f88ac084399395e8d21a5989623a0aa74276c2a916505550956baaa",
+      "chunk_checksums_valid": true,
+      "alpha_required": false,
+      "filter": "nearest",
+      "arena_source_crop": "top 80 percent; darkest gameplay foreground remains engine-drawn",
+      "source": "built-in imagegen, style reference forest-outpost.png",
+      "source_output": "exec-21117e8a-b044-4504-a5da-68a32d83038e.png",
+      "prompt_file": "chapter-background-prompts.md"
+    },
+    {
+      "file": "assets/environments/valley-arena-color-v2.png",
+      "size": [
+        1672,
+        941
+      ],
+      "bytes": 2221738,
+      "sha256": "679ef9db8a63ca1d860f65bb3891775721ad314ccd354b122a20c24fed8dd2cc",
+      "chunk_checksums_valid": true,
+      "filter": "nearest",
+      "source": "built-in imagegen palette edit",
+      "reference": "valley-arena.png",
+      "source_output": "exec-c52984ec-5dd8-43be-9e5a-851919b9ac97.png",
+      "prompt_file": "chapter-palette-prompts.md",
+      "active": true
+    },
+    {
+      "file": "assets/environments/clock-arena-color-v2.png",
+      "size": [
+        1672,
+        941
+      ],
+      "bytes": 2391227,
+      "sha256": "c127cf88390cefd59127ff2e091a365cff3a92ba16124a8c6a94da898148fcd7",
+      "chunk_checksums_valid": true,
+      "filter": "nearest",
+      "source": "built-in imagegen palette edit",
+      "reference": "clock-arena.png",
+      "source_output": "exec-9cb5c35f-3aa3-435c-92dc-d1ce93e80268.png",
+      "prompt_file": "chapter-palette-prompts.md",
+      "active": true
+    },
+    {
+      "file": "assets/environments/ice-arena-color-v2.png",
+      "size": [
+        1672,
+        941
+      ],
+      "bytes": 2729534,
+      "sha256": "d6a7a36b6671c9e42bb34b613e5310c8ad4b89b0251e832007f1c9dc4f656003",
+      "chunk_checksums_valid": true,
+      "filter": "nearest",
+      "source": "built-in imagegen palette edit",
+      "reference": "ice-arena.png",
+      "source_output": "exec-f6cc5028-33b0-4ec1-aecd-5e13b9f8cb0a.png",
+      "prompt_file": "chapter-palette-prompts.md",
+      "active": true
+    },
+    {
+      "file": "assets/environments/forge-arena-color-v2.png",
+      "size": [
+        1672,
+        941
+      ],
+      "bytes": 2170214,
+      "sha256": "b7c66f7f430d94e9bab1cf104b769ebdf0d02e29ecef2d9afd87a11572777b82",
+      "chunk_checksums_valid": true,
+      "filter": "nearest",
+      "source": "built-in imagegen palette edit",
+      "reference": "forge-arena.png",
+      "source_output": "exec-f6469b35-2f0b-4b23-85d9-48da110c41d3.png",
+      "prompt_file": "chapter-palette-prompts.md",
+      "active": true
+    },
+    {
+      "file": "assets/environments/tower-arena-color-v2.png",
+      "size": [
+        1672,
+        941
+      ],
+      "bytes": 2489760,
+      "sha256": "7bed030f548af3085e69494e068a9f4e64fc99d67a1add23bc18ff0ee2627161",
+      "chunk_checksums_valid": true,
+      "filter": "nearest",
+      "source": "built-in imagegen palette edit",
+      "reference": "tower-arena.png",
+      "source_output": "exec-a57ae4fa-0733-47a8-a633-0f231e5e24d2.png",
+      "prompt_file": "chapter-palette-prompts.md",
+      "active": true
     }
   ]
 }

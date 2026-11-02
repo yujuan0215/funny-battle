@@ -95,6 +95,8 @@ var hp_max := 10
 var out := false
 var goal := false
 var show_hp := true
+# Opt-in solid arena walls; the original bridge and test arenas stay unchanged.
+var motion_bounds := Vector2(-INF, INF)
 
 enum SpringShot { NONE, ESCAPING, READY }
 var spring_shot: SpringShot = SpringShot.NONE
@@ -353,7 +355,7 @@ func _move(anim_name: String, target_x: float, move_time: float) -> void:
 	play(anim_name)
 	_sprite.flip_h = not face_right
 	_from = position.x
-	_to = target_x
+	_to = clampf(target_x, motion_bounds.x, motion_bounds.y)
 	_slide = 0.0
 	_slide_dur = maxf(move_time, 0.04)
 
@@ -486,7 +488,7 @@ func _fly(delta: float) -> void:
 	var before := position.x
 	vy += grav * delta
 	position.y += vy * delta
-	position.x = clampf(position.x + air_vx * delta, 80.0, 1200.0)
+	position.x = clampf(position.x + air_vx * delta, maxf(80.0, motion_bounds.x), minf(1200.0, motion_bounds.y))
 	vx = (position.x - before) / maxf(delta, 0.001)
 	_prev_x = position.x
 	# 大拋上升播被拋起的翻滾，過了最高點才換成下落。

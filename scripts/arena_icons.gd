@@ -82,6 +82,10 @@ static func paint(canvas: CanvasItem, kind: String, center: Vector2, span: float
 		"flask":
 			canvas.draw_polyline(PackedVector2Array([center + Vector2(-0.4, -0.9) * r, center + Vector2(-0.15, -0.9) * r, center + Vector2(-0.15, -0.2) * r, center + Vector2(-0.8, 0.8) * r, center + Vector2(0.8, 0.8) * r, center + Vector2(0.15, -0.2) * r, center + Vector2(0.15, -0.9) * r, center + Vector2(0.4, -0.9) * r]), color, line)
 			canvas.draw_line(center + Vector2(-r * 0.55, r * 0.4), center + Vector2(r * 0.55, r * 0.4), color, line)
+		"sound":
+			canvas.draw_rect(Rect2(center + Vector2(-r * 0.8, -r * 0.3), Vector2(r * 0.5, r * 0.6)), color)
+			canvas.draw_colored_polygon(PackedVector2Array([center + Vector2(-r * 0.4, -r * 0.3), center + Vector2(r * 0.2, -r * 0.8), center + Vector2(r * 0.2, r * 0.8), center + Vector2(-r * 0.4, r * 0.3)]), color)
+			canvas.draw_arc(center, r * 0.85, -PI / 3, PI / 3, 8, color, line)
 		"sandbag":
 			canvas.draw_colored_polygon(PackedVector2Array([center + Vector2(-0.45, -0.9) * r, center + Vector2(0.45, -0.9) * r, center + Vector2(0.25, -0.5) * r, center + Vector2(0.8, 0.65) * r, center + Vector2(0.5, 0.9) * r, center + Vector2(-0.5, 0.9) * r, center + Vector2(-0.8, 0.65) * r, center + Vector2(-0.25, -0.5) * r]), color)
 		"magnet":

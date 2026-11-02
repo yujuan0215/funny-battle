@@ -4,10 +4,11 @@ const DUEL := preload("res://scripts/duel.gd")
 var checks := 0
 var failures := 0
 var seen_moves: Dictionary = {}
-const TEST_PROGRESS := "user://fork_test_progress.json"
+const TEST_PROGRESS := "res://.test-data/fork_test_progress.json"
 
 
 func _initialize() -> void:
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://.test-data"))
 	call_deferred("run_tests")
 
 
@@ -64,7 +65,7 @@ func run_tests() -> void:
 	check(bool(level_one.get_meta("playable")) and not level_one.get_signal_connection_list("pressed").is_empty(), "Level 1 is open")
 	for index in range(2, 7):
 		var locked = levels._levels[index - 1]
-		check(not bool(locked.get_meta("playable")), "Chapter %d is a blueprint, not a fake playable level" % index)
+		check(bool(locked.get_meta("playable")) and ResourceLoader.exists(preload("res://scripts/campaign_catalog.gd").chapter(index)["scene"]), "Chapter %d has a real playable scene" % index)
 	check(levels._back is Button, "Level select can return to the start page")
 	levels.free()
 	var menu = scene("res://scenes/main.tscn")

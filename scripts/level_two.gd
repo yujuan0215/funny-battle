@@ -15,7 +15,7 @@ func _ready() -> void:
 	brawl = false
 	campaign_level = 2
 	super._ready()
-	_pace = 0.5
+	_pace = 1.0
 	_apply_pace()
 	for layer in get_children():
 		if not layer is CanvasLayer:
@@ -102,7 +102,7 @@ func _sync_pixel_health() -> void:
 
 
 func _flow_button(text: String, _font_size: int) -> Button:
-	var translated := {"Return to battle": "繼續", "Back to menu": "選關", "Next level": "尖刺試驗"}.get(text, text) as String
+	var translated := {"Return to battle": "繼續", "Back to menu": "返回", "Next level": "尖刺試驗"}.get(text, text) as String
 	var button: Button = super._flow_button(translated, 24)
 	PixelSkin.button(button)
 	button.focus_mode = Control.FOCUS_ALL

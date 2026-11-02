@@ -1,0 +1,38 @@
+[
+  {
+    "suite": "fork_test",
+    "exit_code": 0,
+    "passed": true,
+    "errors": []
+  },
+  {
+    "suite": "test_spring_counter",
+    "exit_code": 0,
+    "passed": true,
+    "errors": []
+  },
+  {
+    "suite": "test_player_feedback",
+    "exit_code": 0,
+    "passed": true,
+    "errors": []
+  },
+  {
+    "suite": "test_intro_campaign",
+    "exit_code": 0,
+    "passed": true,
+    "errors": []
+  },
+  {
+    "suite": "test_pixel_ui",
+    "exit_code": 0,
+    "passed": true,
+    "errors": []
+  },
+  {
+    "suite": "test_vertical_slice",
+    "exit_code": 0,
+    "passed": true,
+    "errors": []
+  }
+]

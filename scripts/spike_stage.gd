@@ -4,6 +4,7 @@ extends "res://scripts/stage_edit.gd"
 const SPIKE_Y := 578.0
 const PixelBackdrop := preload("res://scripts/pixel_backdrop.gd")
 var chapter_theme := "test"
+var hazard_edges := true
 
 
 func _ready() -> void:
@@ -20,7 +21,7 @@ func _draw() -> void:
 	# Cover the expanded camera view too (4:3 and ultrawide have extra world space).
 	var view := (get_canvas_transform().affine_inverse() * get_viewport_rect()).grow(96)
 	if chapter_theme != "test":
-		PixelBackdrop.paint(self, view, chapter_theme)
+		PixelBackdrop.paint(self, view, chapter_theme, true)
 	else:
 		_draw_test_background(view)
 	_draw_pit_and_bridge(view)
@@ -57,15 +58,29 @@ func _draw_pit_and_bridge(view: Rect2) -> void:
 func _draw_bridge(strip: Dictionary) -> void:
 	var a := Vector2(float(strip["x0"]), float(strip["y0"]))
 	var b := Vector2(float(strip["x1"]), float(strip["y1"]))
-	draw_colored_polygon(_quad(strip), Color("624b3d") if chapter_theme.begins_with("forest") else Color(0.13, 0.19, 0.23))
+	var materials := {
+		"valley": [Color("3a5545"), Color("92b493")],
+		"clock": [Color("553e2d"), Color("cca66b")],
+		"ice": [Color("395a63"), Color("b0e0de")],
+		"forge": [Color("4a3428"), Color("bf8b56")],
+		"tower": [Color("3c2c4d"), Color("c9a566")],
+	}
+	var surface: Color = Color("624b3d") if chapter_theme.begins_with("forest") else Color(0.13, 0.19, 0.23)
+	var edge: Color = Color("ba9863") if chapter_theme.begins_with("forest") else Color(0.55, 0.72, 0.72)
+	if materials.has(chapter_theme):
+		surface = materials[chapter_theme][0]
+		edge = materials[chapter_theme][1]
+	draw_colored_polygon(_quad(strip), surface)
 	draw_line(a + Vector2(0, THICK), b + Vector2(0, THICK), Color(0.035, 0.06, 0.08), 6)
 	for x in range(int(a.x) + 24, int(b.x), 48):
 		var top := _top(strip, x)
 		draw_line(Vector2(x, top + 7), Vector2(x, top + THICK - 3), Color(0.055, 0.09, 0.12), 2)
 		draw_circle(Vector2(x - 9, top + 11), 2, Color(0.36, 0.46, 0.49))
-	draw_line(a, b, Color("ba9863") if chapter_theme.begins_with("forest") else Color(0.55, 0.72, 0.72), 4)
+	draw_line(a, b, edge, 4)
 	draw_line(a + Vector2(0, 5), b + Vector2(0, 5), Color(0.25, 0.42, 0.45), 2)
-	# Lit edge caps communicate danger at both physical ends of the bridge.
+	# Edge caps distinguish the original dangerous bridge from solid arenas.
+	var cap := Color(0.97, 0.60, 0.30) if hazard_edges else edge.darkened(0.2)
+	var light := Color(1.0, 0.78, 0.4) if hazard_edges else edge.lightened(0.1)
 	for at in [a, b]:
-		draw_line(at + Vector2(0, -2), at + Vector2(0, THICK), Color(0.97, 0.60, 0.30), 4)
-		draw_line(at + Vector2(-10, -2), at + Vector2(10, -2), Color(1.0, 0.78, 0.4), 4)
+		draw_line(at + Vector2(0, -2), at + Vector2(0, THICK), cap, 4)
+		draw_line(at + Vector2(-10, -2), at + Vector2(10, -2), light, 4)

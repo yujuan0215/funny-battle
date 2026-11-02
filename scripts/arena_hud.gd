@@ -7,6 +7,8 @@ signal leave_requested
 signal pause_requested
 signal tool_selected(index: int)
 signal pace_requested
+signal next_requested
+signal mute_requested
 
 const MenuUi := preload("res://scripts/menu_ui.gd")
 const Icons := preload("res://scripts/arena_icons.gd")
@@ -16,8 +18,9 @@ const CYAN := PixelSkin.HERO
 const CORAL := PixelSkin.DANGER
 const PAPER := PixelSkin.PAPER
 const MUTED := PixelSkin.MUTED
-const TOOLS := ["香蕉", "彈簧", "時停"]
-const USES := ["滑倒・橋邊陷阱", "拉開距離・落地開火", "暫停對手・爭取蓄力"]
+const TOOLS := ["香蕉", "彈簧", "時停", "沙袋", "磁鐵"]
+const TOOL_SYMBOLS := ["banana", "spring", "clock", "sandbag", "magnet"]
+const USES := ["滑倒・橋邊陷阱", "拉開距離・落地開火", "暫停對手・爭取蓄力", "止滑・擋住一次衝撞", "吸引鐵箱・撞停車頭"]
 
 var root: Control
 var objective: Label
@@ -36,6 +39,12 @@ var modal_detail: Label
 var primary: Button
 var retry: Button
 var selected := 0
+var tool_ids: Array = [0, 1, 2]
+var next_button: Button
+var _name_labels: Array[Label] = []
+var _rule_labels: Array[Label] = []
+var _rule_icons: Array[Control] = []
+var _key_labels: Array[Label] = []
 var pace_button: Button
 var intent_timer: Label
 var intent_bar: ProgressBar
@@ -138,11 +147,16 @@ func _build_header() -> void:
 	stack.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	margin.add_child(stack)
 	var health := HBoxContainer.new()
-	health.add_theme_constant_override("separation", 360)
+	health.add_theme_constant_override("separation", 0)
 	stack.add_child(health)
 	for role in 2:
+		if role == 1:
+			var spacer := Control.new()
+			spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			health.add_child(spacer)
 		var box := VBoxContainer.new()
-		box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		box.custom_minimum_size.x = 240 if role == 0 else 420
+		box.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN if role == 0 else Control.SIZE_SHRINK_END
 		health.add_child(box)
 		var heading := HBoxContainer.new()
 		heading.add_theme_constant_override("separation", 10)
@@ -183,14 +197,15 @@ func _build_header() -> void:
 	conditions.tooltip_text = "勝利：BOSS 血量歸零，或落入尖刺。主角必須存活。"
 	conditions.mouse_filter = Control.MOUSE_FILTER_PASS
 	goal.add_child(conditions)
-	pace_button = _button("×0.5", func() -> void: pace_requested.emit())
+	conditions.hide()
+	pace_button = _button("×1.0", func() -> void: pace_requested.emit())
 	pace_button.custom_minimum_size = Vector2(78, 46)
 	pace_button.size_flags_horizontal = Control.SIZE_SHRINK_END
 	pace_button.tooltip_text = "切換 0.5×／1× · 按住 Space 進一步慢速"
 	line.add_child(pace_button)
-	var help := _icon_button("book", "玩法", func() -> void: pause_requested.emit())
-	help.size_flags_horizontal = Control.SIZE_SHRINK_END
-	line.add_child(help)
+	var mute := _icon_button("sound", "音效開關 · M", func() -> void: mute_requested.emit())
+	mute.size_flags_horizontal = Control.SIZE_SHRINK_END
+	line.add_child(mute)
 	var pause := _icon_button("pause", "暫停 · Esc", func() -> void: pause_requested.emit())
 	pause.size_flags_horizontal = Control.SIZE_SHRINK_END
 	line.add_child(pause)
@@ -266,7 +281,7 @@ func _build_tools() -> void:
 	row.add_theme_constant_override("separation", 12)
 	center.add_child(row)
 	for i in 3:
-		var button := _button("", func() -> void: tool_selected.emit(i))
+		var button := _button("", func() -> void: tool_selected.emit(int(tool_ids[i])))
 		button.name = "Tool%d" % (i + 1)
 		button.custom_minimum_size = Vector2(128, 112)
 		button.tooltip_text = "%d · %s\n%s" % [i + 1, TOOLS[i], USES[i]]
@@ -281,12 +296,14 @@ func _build_tools() -> void:
 		var key := _label(str(i + 1), 15, MUTED)
 		key.position = Vector2(10, 6)
 		button.add_child(key)
+		_key_labels.append(key)
 		var name_label := _label(TOOLS[i], 17)
 		name_label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
 		name_label.offset_top = -40
 		name_label.offset_bottom = -8
 		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		button.add_child(name_label)
+		_name_labels.append(name_label)
 		var cool_label := _label("", 15, CORAL)
 		cool_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
 		cool_label.offset_left = -56
@@ -298,9 +315,6 @@ func _build_tools() -> void:
 		_cool_labels.append(cool_label)
 		row.add_child(button)
 		tool_buttons.append(button)
-	var help_center := CenterContainer.new()
-	stack.add_child(help_center)
-	help_center.add_child(_control_legend())
 
 
 func _control_legend() -> HBoxContainer:
@@ -360,18 +374,23 @@ func _build_modal() -> void:
 		sequence.tooltip_text = USES[i]
 		sequence.mouse_filter = Control.MOUSE_FILTER_PASS
 		column.add_child(sequence)
+		_rule_icons.append(sequence)
 		var name_label := _label(TOOLS[i], 17, MUTED)
 		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		column.add_child(name_label)
+		_rule_labels.append(name_label)
 	var row := HBoxContainer.new()
 	_modal_buttons = row
 	row.add_theme_constant_override("separation", 12)
 	stack.add_child(row)
-	primary = _icon_button("play", "開始／繼續 · Enter", func() -> void: start_requested.emit())
+	primary = _button("開始", func() -> void: start_requested.emit())
 	row.add_child(primary)
-	retry = _icon_button("retry", "重試 · R", func() -> void: retry_requested.emit())
+	retry = _button("重試", func() -> void: retry_requested.emit())
 	row.add_child(retry)
-	row.add_child(_icon_button("levels", "返回選關", func() -> void: leave_requested.emit()))
+	row.add_child(_button("返回", func() -> void: leave_requested.emit()))
+	next_button = _button("下一章", func() -> void: next_requested.emit())
+	row.add_child(next_button)
+	next_button.hide()
 	overlay.hide()
 
 
@@ -393,26 +412,41 @@ func set_rescue(available: bool) -> void:
 
 
 func set_loadout(allowed: Array) -> void:
+	tool_ids = allowed.duplicate()
 	for i in 3:
-		tool_buttons[i].visible = i in allowed
-		_rules.get_child(i).visible = i in allowed
+		var enabled := i < tool_ids.size()
+		tool_buttons[i].visible = enabled
+		_rules.get_child(i).visible = enabled
+		if not enabled:
+			continue
+		var id := int(tool_ids[i])
+		tool_buttons[i].tooltip_text = "%d · %s\n%s" % [i + 1, TOOLS[id], USES[id]]
+		_name_labels[i].text = TOOLS[id]
+		_tool_icons[i].set_symbols([TOOL_SYMBOLS[id]])
+		_rule_labels[i].text = TOOLS[id]
+		_rule_icons[i].set_symbols([TOOL_SYMBOLS[id], "right", "shot" if id in [1, 4] else "clock" if id == 2 else "slip"])
+	_tool_snapshot = ""
+	_selected_skin_index = -1
 
 
 func set_tools(tool: int, cooldown: Array[float], pace: float = 1.0) -> void:
-	var snapshot := "%d:%.2f:%d:%d:%d" % [tool, pace, ceili(cooldown[0] / pace * 10), ceili(cooldown[1] / pace * 10), ceili(cooldown[2] / pace * 10)]
+	var snapshot := str(tool) + str(snappedf(pace, 0.01))
+	for id in tool_ids:
+		snapshot += ":%d" % ceili(cooldown[id] / pace * 10)
 	if snapshot == _tool_snapshot:
 		return
 	_tool_snapshot = snapshot
 	selected = tool
-	for i in 3:
+	for i in tool_ids.size():
+		var id := int(tool_ids[i])
 		var button := tool_buttons[i]
-		_cool_labels[i].text = "" if cooldown[i] <= 0 else "%.1f" % (ceilf(cooldown[i] / pace * 10) / 10)
-		_tool_icons[i].ink = PAPER if cooldown[i] <= 0 else MUTED.darkened(0.4)
-		_last_cooldown[i] = maxf(_last_cooldown[i], cooldown[i]) if cooldown[i] > 0 else 0.0
-		_tool_icons[i].cooldown = clampf(cooldown[i] / maxf(_last_cooldown[i], 0.001), 0, 1)
+		_cool_labels[i].text = "" if cooldown[id] <= 0 else "%.1f" % (ceilf(cooldown[id] / pace * 10) / 10)
+		_tool_icons[i].ink = PAPER if cooldown[id] <= 0 else MUTED.darkened(0.4)
+		_last_cooldown[i] = maxf(_last_cooldown[i], cooldown[id]) if cooldown[id] > 0 else 0.0
+		_tool_icons[i].cooldown = clampf(cooldown[id] / maxf(_last_cooldown[i], 0.001), 0, 1)
 		_tool_icons[i].queue_redraw()
 		if _selected_skin_index != tool:
-			button.add_theme_stylebox_override("normal", PixelSkin.box("selected" if i == tool else "normal"))
+			button.add_theme_stylebox_override("normal", PixelSkin.box("selected" if id == tool else "normal"))
 	_selected_skin_index = tool
 
 
@@ -457,15 +491,15 @@ func _process(delta: float) -> void:
 
 func show_briefing(tutorial: bool = false, arena_name: String = "尖刺斷橋") -> void:
 	_show_modal("玩法" if tutorial else arena_name, "擊敗 BOSS", "", "開始", false)
-	_rules.show()
-	_controls.show()
+	_rules.visible = tutorial
+	_controls.visible = tutorial
 	_result_icon.set_symbols(["book"] if tutorial else ["play"])
 
 
 func show_pause() -> void:
 	_show_modal("暫停", "", "", "繼續", true)
-	_rules.show()
-	_controls.show()
+	_rules.hide()
+	_controls.hide()
 	_result_icon.set_symbols(["pause"])
 
 
@@ -491,9 +525,9 @@ func _show_modal(title: String, reason: String, detail: String, action: String, 
 	modal_detail.text = detail
 	modal_detail.visible = not detail.is_empty()
 	modal_reason.visible = not reason.is_empty()
+	next_button.hide()
 	primary.tooltip_text = action + " · Enter"
-	var icon := primary.get_child(0)
-	icon.set_symbols(["retry"] if action in ["重玩", "重試"] else ["play"])
+	primary.text = action
 	retry.visible = with_retry
 	for button in _game_buttons:
 		button.focus_mode = Control.FOCUS_NONE
@@ -517,3 +551,17 @@ func close_modal() -> void:
 	for button in _game_buttons:
 		button.focus_mode = Control.FOCUS_ALL
 	get_viewport().gui_release_focus()
+
+
+func offer_next(available: bool, caption: String) -> void:
+	next_button.visible = available
+	if not available:
+		return
+	next_button.text = "下一章"
+	next_button.tooltip_text = caption
+	var active: Array[Button] = [primary, _modal_buttons.get_child(2), next_button]
+	for i in active.size():
+		active[i].focus_neighbor_left = active[posmod(i - 1, active.size())].get_path()
+		active[i].focus_neighbor_right = active[(i + 1) % active.size()].get_path()
+		active[i].focus_next = active[(i + 1) % active.size()].get_path()
+		active[i].focus_previous = active[posmod(i - 1, active.size())].get_path()

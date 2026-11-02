@@ -2,14 +2,15 @@ extends SceneTree
 
 const Arena := preload("res://scenes/spikes_challenge.tscn")
 const Progress := preload("res://scripts/player_progress.gd")
-const TEST_SAVE := "user://player_feedback_test.json"
-const LOSS_SAVE := "user://player_feedback_loss_test.json"
+const TEST_SAVE := "res://.test-data/player_feedback_test.json"
+const LOSS_SAVE := "res://.test-data/player_feedback_loss_test.json"
 var checks := 0
 var failures := 0
 var shots := 0
 
 
 func _initialize() -> void:
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://.test-data"))
 	_run.call_deferred()
 
 
@@ -62,8 +63,8 @@ func _run() -> void:
 	check(get_nodes_in_group("duel_prop").is_empty() and game._props_used == 0, "Briefing blocks world placement")
 	game._hud.primary.pressed.emit()
 	check(game._round_state == game.RoundState.PLAYING and not game._hud.overlay.visible, "Start button begins real combat")
-	check(game._pace == 0.5 and game.left.time_scale == 0.5 and game.left.is_processing(), "Battle starts in readable half speed without holding a key")
-	check(game._hud.pace_button.text == "×0.5", "Current pace remains visible without an explanatory paragraph")
+	check(game._pace == 1.0 and game.left.time_scale == 1.0 and game.left.is_processing(), "Battle starts at normal speed without holding a key")
+	check(game._hud.pace_button.text == "×1.0", "Current pace remains visible without an explanatory paragraph")
 	check(game._hud.tool_buttons[0].focus_mode == Control.FOCUS_ALL, "Closing the modal restores battle control focus")
 	check(not game._rack.get_parent().visible and game._cast_buttons.is_empty(), "Sandbox/editor controls stay hidden")
 	game._hud.pause_requested.emit()
@@ -81,7 +82,7 @@ func _run() -> void:
 	check(game._pace == 0.15 and game.left.time_scale == 0.15, "Holding Space adds thinking time beyond default half speed")
 	slow.pressed = false
 	game._unhandled_input(slow)
-	check(game._pace == 0.5 and game.right.time_scale == 0.5, "Releasing Space returns to the chosen half speed")
+	check(game._pace == 1.0 and game.right.time_scale == 1.0, "Releasing Space returns to the chosen normal speed")
 	# Route through the actual viewport GUI: focused buttons also accept Space.
 	game.process_mode = Node.PROCESS_MODE_INHERIT
 	game._hud.tool_buttons[1].grab_focus()
@@ -91,16 +92,15 @@ func _run() -> void:
 	check(game._pace == 0.15, "Focused tool buttons cannot swallow the Space hold action")
 	slow.pressed = false
 	root.push_input(slow)
-	check(game._pace == 0.5, "Space release reaches the arena while a tool button has GUI focus")
+	check(game._pace == 1.0, "Space release reaches the arena while a tool button has GUI focus")
 	game.process_mode = Node.PROCESS_MODE_DISABLED
 	game._hud.pace_button.pressed.emit()
-	check(game._pace == 1.0 and game.right.time_scale == 1.0, "Pace control offers real-time combat when desired")
+	check(game._pace == 0.5 and game.right.time_scale == 0.5, "Pace control still offers half speed when desired")
 	slow.pressed = true
 	game._input(slow)
 	slow.pressed = false
 	game._input(slow)
-	check(game._pace == 1.0, "Focus release restores the selected pace, rather than always forcing half speed")
-	game._hud.pace_button.pressed.emit()
+	check(game._pace == 0.5, "Focus release restores the selected half-speed pace")
 	game._place(Vector2(200, 500))
 	check(game._props_used == 0 and game._hud.feedback.text == "橋外" and "miss" in game._hud._feedback_icons.symbols, "Invalid ground gives a warning pictogram without spending cooldown")
 	for i in 3:
@@ -128,7 +128,7 @@ func _run() -> void:
 	game._update_intent()
 	game._update_timing()
 	check(game._hud.intent.text == "衝撞準備" and "left" in game._hud._intent_icons.symbols, "Rush intent combines a short cue and locked-direction arrow")
-	check(game._hud.intent_bar.visible and game._hud.intent_timer.text == "1.7s", "Rush warning shows the real-time decision window at half speed")
+	check(game._hud.intent_bar.visible and game._hud.intent_timer.text == "0.9s", "Rush warning shows the normal-speed decision window")
 	game.right.action_age = game.RUSH_WINDUP * 0.5
 	game._update_timing()
 	check(is_equal_approx(game._hud.intent_bar.value, 0.5), "Warning gauge follows the actual attack startup")
@@ -136,7 +136,7 @@ func _run() -> void:
 	game.right.busy = game.RECOVER_TIME
 	game._update_intent()
 	game._update_timing()
-	check(game._hud.intent.text == "空檔" and game._hud.intent_timer.text == "1.4s", "A complete attack leaves a readable 1.4-second counter window")
+	check(game._hud.intent.text == "空檔" and game._hud.intent_timer.text == "0.7s", "A complete attack shows its normal-speed counter window")
 	game._restart()
 	game._update_intent()
 	check("left" in game._hud._intent_icons.symbols, "Boss approach arrows follow its actual facing instead of always pointing right")

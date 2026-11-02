@@ -1,7 +1,7 @@
 extends SceneTree
 
 const Progress := preload("res://scripts/player_progress.gd")
-const SAVE := "user://intro_campaign_test.json"
+const SAVE := "res://.test-data/intro_campaign_test.json"
 var checks := 0
 var failures := 0
 var shots := 0
@@ -9,6 +9,7 @@ var seen: Dictionary = {}
 
 
 func _initialize() -> void:
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://.test-data"))
 	_run.call_deferred()
 
 
@@ -52,11 +53,11 @@ func _run() -> void:
 	var intro = scene("res://scenes/spikes.tscn")
 	var challenge = scene("res://scenes/spikes_challenge.tscn")
 	check(intro.beginner and not challenge.beginner, "Entry and challenge are distinct playable profiles")
-	check(intro.left.hp == 12 and challenge.left.hp == 8, "Entry allows more mistakes than the preserved challenge")
+	check(intro.left.hp == 6 and challenge.left.hp == 8, "Campaign hero is weaker than the boss and the preserved lab")
 	check(intro.right.hp == 12 and challenge.right.hp == 30, "Entry needs fewer successful interventions")
 	check(intro._rescues_left == 1 and intro._hud.rescue_icon.visible and challenge._rescues_left == 0, "Only the entry level has a visible one-use safety rope")
-	check(intro._rush_windup() == 1.4 and challenge._rush_windup() == 0.85, "Entry provides 2.8 real seconds to read a half-speed rush")
-	check(intro._recover_duration() == 1.5 and challenge._recover_duration() == 0.7, "Entry provides a three-second recovery opening at half speed")
+	check(intro._rush_windup() == 1.4 and challenge._rush_windup() == 0.85, "Entry provides a readable 1.4-second rush at default normal speed")
+	check(intro._recover_duration() == 1.5 and challenge._recover_duration() == 0.7, "Entry provides a three-second recovery opening at normal speed")
 	var move: Dictionary = intro._move_for(intro.right, "普通1")
 	check(move["chain"] == "" and move["damage"] == 1 and move["startup"] >= 0.9, "Entry boss punches are telegraphed single hits")
 	check(challenge._move_for(challenge.right, "普通1")["chain"] == "普通2", "The original boss combo remains in the challenge")
@@ -81,7 +82,7 @@ func _run() -> void:
 	intro._restart()
 	for frame in 8 * 60:
 		step(intro)
-	check(not intro._ended and intro.left.hp >= 10, "A new player survives the first eight seconds without intervention")
+	check(not intro._ended and intro.left.hp >= 3, "A new player survives the first eight seconds without intervention")
 	check(intro.right.hp == 12, "The hero does not automatically clear the entry level while the player watches")
 	intro.left.position = Vector2(300, 580)
 	var hp: int = intro.left.hp
@@ -92,7 +93,7 @@ func _run() -> void:
 	intro._check_spikes()
 	check(intro._ended and intro.left.out, "A second pit mistake still follows the normal loss rule")
 	intro._restart()
-	check(intro._rescues_left == 1 and intro.left.hp == 12, "Retry restores entry health and the one-use rope")
+	check(intro._rescues_left == 1 and intro.left.hp == 6, "Retry restores entry health and the one-use rope")
 	intro.free()
 
 	for fps in [30, 60, 120]:
@@ -120,7 +121,7 @@ func _run() -> void:
 		intro.free()
 
 	var second = scene("res://scenes/level_two.tscn")
-	check(second.campaign_level == 2 and second._pace == 0.5, "Remote duel is a real playable second level at half speed")
+	check(second.campaign_level == 2 and second._pace == 1.0, "Remote duel is a real playable second level at normal speed")
 	check(is_instance_valid(second._pause_button) and second._pause_button.shape == "pause", "Second level retains the upstream pause UI")
 	check(second._items.size() == 3 and not second._spring_retreat_row.is_empty(), "Second level loads the upstream item rules rather than the old local spring toggle")
 	check(second._spring_plan(second.left, -1)["shot"] and second._spring_plan(second.left, 1)["toward"], "Upstream spring direction plans survive the port")
@@ -139,7 +140,7 @@ func _run() -> void:
 	check(levels._levels.size() == 6, "Adventure presents the six-chapter design")
 	check(bool(levels._levels[0].get_meta("playable")), "The introductory outpost remains playable")
 	for index in range(1, 6):
-		check(not bool(levels._levels[index].get_meta("playable")), "Planned chapter %d stays a blueprint despite old test clears" % (index + 1))
+		check(bool(levels._levels[index].get_meta("playable")), "Demo chapter %d is playable" % (index + 1))
 	levels._show_blueprint(preload("res://scripts/campaign_catalog.gd").chapter(6))
 	check(is_instance_valid(levels._overlay), "The final boss blueprint can be inspected without entering unfinished gameplay")
 	check(levels._levels[0].focus_mode == Control.FOCUS_NONE, "Blueprint inspection cannot tab into covered chapter buttons")

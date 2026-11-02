@@ -13,12 +13,18 @@ const RUSH_TIME := 1.0
 const EDGE_HOLD := 0.4
 const EDGE_MARGIN := 20.0
 const HERO_HP := 8
-const DEFAULT_PACE := 0.5
+const DEFAULT_PACE := 1.0
+const HALF_PACE := 0.5
 const FOCUS_PACE := 0.15
 const RECOVER_TIME := 0.7
 const BOSS_PATTERN: Array[String] = ["普通1", "衝刺", "遠距離普攻", "蓄力", "遠距離追擊", "衝刺"]
 const INTRO_PATTERN: Array[String] = ["普通1", "衝刺"]
 @export var beginner := true
+@export_range(1, 6) var chapter_number := 1
+const BattleAudio := preload("res://scripts/battle_audio.gd")
+var _audio: Node
+var _elapsed := 0.0
+var _counter_hits := 0
 var _ended := false
 var _hero_wait := 0.0
 var _boss_move: Dictionary = {}
@@ -51,7 +57,7 @@ func _ready() -> void:
 	remove_child(_stage)
 	_stage.queue_free()
 	_stage = SPIKE_STAGE.new()
-	_stage.chapter_theme = "forest_arena" if beginner else "test"
+	_stage.chapter_theme = ("forest_arena" if chapter_number == 1 else str(Campaign.chapter(chapter_number)["theme"])) if beginner else "test"
 	add_child(_stage)
 	_boss_move = (_moves["普通1"] as Dictionary).duplicate()
 	_boss_move.merge({
@@ -62,7 +68,11 @@ func _ready() -> void:
 		_items["時停"]["active"] = 1.2
 	_hud = ArenaHud.new()
 	add_child(_hud)
+	_audio = BattleAudio.new()
+	add_child(_audio)
 	_hud.start_requested.connect(_start_round)
+	_hud.next_requested.connect(_next_chapter)
+	_hud.mute_requested.connect(func() -> void: _audio.toggle_mute())
 	_hud.retry_requested.connect(_restart)
 	_hud.leave_requested.connect(_leave_arena)
 	_hud.pause_requested.connect(_pause_round)
@@ -74,18 +84,22 @@ func _ready() -> void:
 	var tutorial := bool(get_tree().get_meta("arena_tutorial", false))
 	if get_tree().has_meta("arena_tutorial"):
 		get_tree().remove_meta("arena_tutorial")
-	_hud.show_briefing(tutorial, "木棧前哨" if beginner else "尖刺試驗")
+	_hud.show_briefing(tutorial, str(Campaign.chapter(chapter_number)["name"]) if beginner else "尖刺試驗")
+	if beginner:
+		_hud.modal_reason.text = str(Campaign.chapter(chapter_number)["boss"])
+		_hud.modal_detail.text = Campaign.opening(chapter_number)
+		_hud.modal_detail.show()
 	_hud.objective.text = "借力反擊" if beginner else "試驗場 · 擊敗 BOSS"
 	camera.position = Vector2(705, 370)
 	camera.zoom = Vector2.ONE * 1.25
 
 
 func _level_number() -> int:
-	return 1 if beginner else 3
+	return chapter_number if beginner else 3
 
 
 func _allowed_tools() -> Array:
-	return Campaign.chapter(1)["tools"] if beginner else [0, 1, 2]
+	return Campaign.chapter(chapter_number)["tools"] if beginner else [0, 1, 2]
 
 
 func _rush_windup() -> float:
@@ -110,6 +124,8 @@ func _banana_radius() -> float:
 
 func _reset_fighters() -> void:
 	_ended = false
+	_elapsed = 0.0
+	_counter_hits = 0
 	_hero_wait = 0.0
 	_boss_state = ""
 	_rush_direction = -1.0
@@ -121,17 +137,19 @@ func _reset_fighters() -> void:
 	_boss_action = ""
 	_round_state = RoundState.BRIEFING
 	_props_used = 0
+	_tool = int(_allowed_tools()[0])
 	_rescues_left = 1 if beginner else 0
 	_last_hero_hit = "BOSS 的攻擊"
 	_last_boss_hit = "主角的反擊"
 	_intent_key = ""
 	_focus_slow = false
+	_preferred_pace = DEFAULT_PACE
 	_pace = _preferred_pace
 	_spring_retreat = true
 	_spring_practice = false
 	left.display_name = "主角"
 	right.display_name = "BOSS"
-	left.hp_max = 12 if beginner else HERO_HP
+	left.hp_max = 6 if beginner else HERO_HP
 	right.hp_max = 12 if beginner else 30
 	left.scale = Vector2.ONE * 0.65
 	right.scale = Vector2.ONE * 1.2
@@ -182,7 +200,7 @@ func _start_round() -> void:
 		prop.set_process(true)
 	_hud.close_modal()
 	if starting:
-		_hud.tell("", 2.5, ["boss", "clock"])
+		_audio.cue("start")
 
 
 func _apply_pace() -> void:
@@ -202,7 +220,7 @@ func _tick_tool_cooldowns(delta: float) -> void:
 func _toggle_battle_pace() -> void:
 	if _round_state != RoundState.PLAYING:
 		return
-	_preferred_pace = NORMAL if _preferred_pace < NORMAL else DEFAULT_PACE
+	_preferred_pace = NORMAL if _preferred_pace < NORMAL else HALF_PACE
 	_pace = FOCUS_PACE if _focus_slow else _preferred_pace
 	_apply_pace()
 
@@ -222,6 +240,13 @@ func _pause_round() -> void:
 	for prop in get_tree().get_nodes_in_group("duel_prop"):
 		prop.set_process(false)
 	_hud.show_pause()
+
+
+func _next_chapter() -> void:
+	if beginner and chapter_number < 6:
+		get_tree().change_scene_to_file(Campaign.chapter(chapter_number + 1)["scene"])
+	else:
+		_leave_arena()
 
 
 func _leave_arena() -> void:
@@ -252,12 +277,16 @@ func _counter_message(message: String, seconds: float = 2.0) -> void:
 
 func _on_counter_shot(shooter: Duelist, _target: Duelist, hit: bool) -> void:
 	if _hud != null and shooter == left:
-		_hud.tell("命中" if hit else "落空", 2.5, ["spring", "back", "shot", "check" if hit else "miss"], not hit)
+		if hit:
+			_counter_hits += 1
+			_audio.cue("counter")
+		_hud.tell("命中" if hit else "落空", 1.0, ["check" if hit else "miss"], not hit)
 
 
 func _process(delta: float) -> void:
 	if _ended or _round_state != RoundState.PLAYING:
 		return
+	_elapsed += delta
 	if not _preview and not _stage.editing:
 		_keep_boss_on_bridge()
 		_check_spikes()
@@ -265,6 +294,8 @@ func _process(delta: float) -> void:
 			return
 	_hero_wait = maxf(0, _hero_wait - delta * _pace)
 	super._process(delta)
+	if _round_state != RoundState.PLAYING:
+		return
 	if _preview or _stage.editing:
 		return
 	_check_spikes()
@@ -411,6 +442,7 @@ func _draw() -> void:
 		var width := absf(end.x - start.x)
 		if width > 8:
 			draw_rect(Rect2(minf(start.x, end.x), 478, width, 22), Color(1.0, 0.3, 0.2, 0.16))
+			draw_dashed_line(start, end, Color(0.08, 0.035, 0.04, 0.95), 8.0, 14.0)
 			draw_dashed_line(start, end, Color(1, 0.45, 0.3, 0.9), 4.0, 14.0)
 			draw_line(end, end + Vector2(-_rush_direction * 16, -12), Color(1, 0.5, 0.32), 4.0)
 			draw_line(end, end + Vector2(-_rush_direction * 16, 12), Color(1, 0.5, 0.32), 4.0)
@@ -420,7 +452,7 @@ func _think_open(body: Duelist, other: Duelist) -> void:
 	if _preview:
 		super._think_open(body, other)
 		return
-	if _ended or _stage.editing or not body.can_act() or body.out or other.out:
+	if _ended or _round_state != RoundState.PLAYING or _stage.editing or not body.can_act() or body.out or other.out:
 		return
 	body.just_landed = false
 	if body.anim == "down":
@@ -526,6 +558,7 @@ func _begin_boss_move() -> void:
 	if _boss_action == "衝刺":
 		var bounds := _bridge_bounds()
 		_boss_state = "windup"
+		_audio.cue("warn")
 		_rush_direction = 1.0 if gap > 0 else -1.0
 		_rush_target = bounds.y - EDGE_MARGIN if _rush_direction > 0 else bounds.x + EDGE_MARGIN
 		right.face_right = _rush_direction > 0
@@ -566,6 +599,9 @@ func _move_for(body: Duelist, id: String) -> Dictionary:
 		move["startup"] = maxf(float(move["startup"]), 0.9)
 		move["damage"] = 1
 		move["kb"] = 6
+		move["chain"] = ""
+	elif id in ["普通1", "普通2", "普通3"]:
+		move["damage"] = 0
 		move["chain"] = ""
 	elif id in ["彈簧開火", "遠距離普攻", "蓄力", "遠距離追擊", "下落"]:
 		move["damage"] = float(move["damage"]) * 2
@@ -621,6 +657,8 @@ func _land_hit(attacker: Duelist, defender: Duelist, move: Dictionary) -> void:
 				move["kb"] = minf(6, float(move["kb"]))
 				move["chain"] = ""
 		super._land_hit(attacker, defender, move)
+		if _audio != null:
+			_audio.cue("hurt")
 		_sync_health()
 		return
 	if defender.out:
@@ -628,6 +666,9 @@ func _land_hit(attacker: Duelist, defender: Duelist, move: Dictionary) -> void:
 	# Heavy boss actions resist knockback, but every visible point of damage
 	# counts toward an actual health victory, including the final point.
 	var damage := maxi(int(round(float(move["damage"]))), 0)
+	if damage == 0:
+		attacker.chain = ""
+		return
 	defender.hp = maxi(0, defender.hp - damage)
 	_last_boss_hit = _move_title(str(move.get("id", "普通1")))
 	if defender.hp == 0:
@@ -639,6 +680,8 @@ func _land_hit(attacker: Duelist, defender: Duelist, move: Dictionary) -> void:
 	attacker.hitstop = maxf(attacker.hitstop, 0.03)
 	defender.hitstop = maxf(defender.hitstop, 0.03)
 	_shake = maxf(_shake, 4)
+	if _audio != null:
+		_audio.cue("hit")
 	_spark(defender.chest(), attacker.sheet)
 	_sync_health()
 	var id := str(move.get("id", ""))
@@ -672,7 +715,7 @@ func _try_spring(body: Duelist, prop: DuelProp) -> bool:
 		_banana_fall = false
 		_boss_state = "interrupted"
 	elif launched and body == left and not _preview:
-		_hud.tell("", 2.0, ["spring", "back", "shot"])
+		pass
 	return launched
 
 
@@ -695,8 +738,8 @@ func _place(at: Vector2) -> void:
 		return
 	if _tool not in _allowed_tools():
 		return
-	if ground_height(at.x, at.y) >= SPIKE_STAGE.SPIKE_Y:
-		_hud.tell("橋外", 1.5, ["spikes", "miss"], true)
+	if _placement_preview(at).is_empty():
+		_hud.tell("場外" if beginner and chapter_number >= 2 else "橋外", 1.5, ["miss"] if beginner and chapter_number >= 2 else ["spikes", "miss"], true)
 		return
 	if _cool[_tool] > 0:
 		_hud.tell("%.1f" % (_cool[_tool] / _pace), 1.0, ["clock"], true)
@@ -715,7 +758,8 @@ func _place(at: Vector2) -> void:
 			_cool[_tool] *= 0.7
 			_refresh_counter_hud()
 		_props_used += 1
-		_hud.tell("", 1.0, [["banana", "check"], ["spring", "check"], ["clock", "check"]][_tool])
+		_audio.cue("place")
+		_hud.tell("", 0.5, [["banana", "check"], ["spring", "check"], ["clock", "check"]][_tool])
 
 
 func _facing_hit(attacker: Duelist, defender: Duelist, reach: float) -> bool:
@@ -771,6 +815,13 @@ func _finish_round() -> void:
 	var saved := won and Progress.mark_cleared(_level_number(), progress_path) == OK
 	_sync_health()
 	_hud.show_result(won, reason, _props_used, saved)
+	_audio.cue("win" if won else "lose")
+	_hud.modal_detail.text += "\n時間 %02d:%02d　·　反擊 %d 次　·　剩餘 HP %d" % [int(_elapsed) / 60, int(_elapsed) % 60, _counter_hits, left.hp]
+	if beginner and won:
+		_hud.offer_next(chapter_number < 6, "下一章：" + str(Campaign.chapter(mini(chapter_number + 1, 6))["name"]))
+		if chapter_number == 6:
+			_hud.modal_title.text = "機關島恢復運轉"
+			_hud.modal_reason.text = "冒險完成"
 	_refresh_hint()
 
 
@@ -792,7 +843,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode in [KEY_1, KEY_2, KEY_3]:
 			if _round_state == RoundState.PLAYING:
-				pick_tool(int(event.keycode - KEY_1))
+				var slot := int(event.keycode - KEY_1)
+				var allowed := _allowed_tools()
+				if slot < allowed.size():
+					pick_tool(int(allowed[slot]))
 			get_viewport().set_input_as_handled()
 			return
 		if event.keycode == KEY_ESCAPE:
@@ -800,6 +854,11 @@ func _unhandled_input(event: InputEvent) -> void:
 				_leave_arena()
 			else:
 				_pause_round()
+			get_viewport().set_input_as_handled()
+			return
+		if event.keycode == KEY_M:
+			_audio.toggle_mute()
+			_hud.tell("音效關閉" if BattleAudio.muted else "音效開啟", 1.5)
 			get_viewport().set_input_as_handled()
 			return
 		if event.keycode == KEY_R:
@@ -844,3 +903,8 @@ func _hide_arena_chrome() -> void:
 	if _hint != null:
 		_hint.visible = false
 		_hint.text = ""
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and is_instance_valid(_hud) and _round_state == RoundState.PLAYING:
+		_pause_round()

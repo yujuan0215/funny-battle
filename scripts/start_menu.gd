@@ -40,8 +40,8 @@ func _ready() -> void:
 	subtitle.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
 	subtitle.offset_left = -200
 	subtitle.offset_right = 200
-	subtitle.offset_top = 270
-	subtitle.offset_bottom = 320
+	subtitle.offset_top = 246
+	subtitle.offset_bottom = 296
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	subtitle.add_theme_font_override("font", MenuUi.body_font())
 	subtitle.add_theme_font_size_override("font_size", 36)

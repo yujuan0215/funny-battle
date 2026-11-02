@@ -70,6 +70,7 @@ func _run() -> void:
 			if button.visible:
 				check(fits(button), "Available tools stay on screen at " + str(dimensions))
 		check(not game._hud.hero_bar.get_global_rect().intersects(game._hud.boss_bar.get_global_rect()), "The two health gauges remain separate")
+		check(game._hud.hero_bar.size.x < game._hud.boss_bar.size.x * 0.65 and fits(game._hud.hero_bar) and fits(game._hud.boss_bar), "Hero health gauge is visibly shorter than the boss without clipping at " + str(dimensions))
 		game._hud.set_health(9, 12, 4, 12)
 		check(game._hud.hero_bar.value == 9 and game._hud.boss_bar.value == 4, "Visual damage trails do not delay actual HP")
 		game._pause_round()

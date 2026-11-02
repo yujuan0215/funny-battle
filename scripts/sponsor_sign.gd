@@ -3,7 +3,7 @@ extends Node2D
 
 var shown_hits := 0
 
-var _font: SystemFont
+var _font: Font
 var _swings: Dictionary = {}
 var _kick := 0.0
 var _kick_dir := 1.0
@@ -13,8 +13,8 @@ var _bits: Array[Dictionary] = []
 func _ready() -> void:
 	add_to_group("sponsor")
 	z_index = 4
-	_font = SystemFont.new()
-	_font.font_names = PackedStringArray(["Microsoft JhengHei UI", "Microsoft JhengHei", "Microsoft YaHei", "PingFang TC", "Heiti TC", "Noto Sans CJK TC"])
+	_font = preload("res://scripts/menu_ui.gd").font()
+
 
 
 func _process(delta: float) -> void:

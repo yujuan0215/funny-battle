@@ -1,0 +1,20 @@
+{
+  "assets": [
+    {
+      "file": "assets/environments/forest-outpost.png",
+      "size": [
+        1672,
+        941
+      ],
+      "bit_depth": 8,
+      "png_color_type": 2,
+      "bytes": 1907871,
+      "chunk_checksums_valid": true,
+      "alpha_required": false,
+      "filter": "nearest",
+      "arena_source_crop": "top 70 percent",
+      "status": "prototype target; exact pixel grid and palette not approved for production",
+      "source": "built-in image_gen"
+    }
+  ]
+}

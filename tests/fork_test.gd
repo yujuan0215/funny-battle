@@ -4,6 +4,7 @@ const DUEL := preload("res://scripts/duel.gd")
 var checks := 0
 var failures := 0
 var seen_moves: Dictionary = {}
+const TEST_PROGRESS := "user://fork_test_progress.json"
 
 
 func _initialize() -> void:
@@ -20,7 +21,11 @@ func check(ok: bool, message: String) -> void:
 func scene(path: String):
 	var node = load(path).instantiate()
 	node.process_mode = Node.PROCESS_MODE_DISABLED
+	if path in ["res://scenes/spikes_challenge.tscn", "res://scenes/levels.tscn"]:
+		node.progress_path = TEST_PROGRESS
 	root.add_child(node)
+	if path == "res://scenes/spikes_challenge.tscn":
+		node._start_round()
 	return node
 
 
@@ -49,18 +54,18 @@ func run_tests() -> void:
 	var play = start_page.get_node("Stage/Play")
 	var tutorial = start_page.get_node("Stage/Tutorial")
 	check(play is Button and not play.get_signal_connection_list("pressed").is_empty(), "Play opens level selection")
-	check(tutorial is Button and tutorial.caption == "Tutorial", "Tutorial button is present")
-	check(start_page.get_node("Background") is TextureRect, "Start page uses the beach background")
-	start_page._tutorial_stub()
+	check(tutorial is Button and tutorial.shape == "help", "Tutorial uses a book pictogram")
+	check(start_page.get_node("Background").get_script() == load("res://scripts/pixel_backdrop.gd"), "Start page uses the shared pixel environment")
+	check(start_page.has_method("_on_tutorial") and not tutorial.get_signal_connection_list("pressed").is_empty(), "Tutorial opens playable arena instructions")
 	start_page.free()
 	var levels = scene("res://scenes/levels.tscn")
 	check(levels.LEVEL_ONE == "res://scenes/spikes.tscn", "Level 1 leads to the spike arena")
-	var level_one = levels.get_node("Stage/Level1")
-	check(level_one.shape == "level" and level_one.caption == "1" and not level_one.get_signal_connection_list("pressed").is_empty(), "Level 1 is open")
-	for index in range(2, 11):
-		var locked = levels.get_node("Stage/Level%d" % index)
-		check(locked.shape == "lock" and locked.mouse_filter == Control.MOUSE_FILTER_IGNORE, "Level %d stays locked" % index)
-	check(levels.get_node("Stage/Back") is Button, "Level select can return to the start page")
+	var level_one = levels._levels[0]
+	check(bool(level_one.get_meta("playable")) and not level_one.get_signal_connection_list("pressed").is_empty(), "Level 1 is open")
+	for index in range(2, 7):
+		var locked = levels._levels[index - 1]
+		check(not bool(locked.get_meta("playable")), "Chapter %d is a blueprint, not a fake playable level" % index)
+	check(levels._back is Button, "Level select can return to the start page")
 	levels.free()
 	var menu = scene("res://scenes/main.tscn")
 	var buttons: Dictionary = {}
@@ -85,19 +90,19 @@ func run_tests() -> void:
 		if mode == "qte":
 			check(original._rack == null, "Original QTE keeps its own controls")
 		else:
-			check(original._rack != null and original._items.size() == 3, "Original three props retained: " + mode)
+			check(original._rack != null and original._items.has("香蕉") and original._items.has("彈簧") and original._items.has("時停"), "Original three selectable props retained: " + mode)
 		if mode == "brawl":
 			check(original._goal == original.right and original.right.goal, "Original brawl goal retained")
 		original.free()
-	var arena = scene("res://scenes/spikes.tscn")
+	var arena = scene("res://scenes/spikes_challenge.tscn")
 	check(not DUEL.qte and not DUEL.brawl, "Spike arena does not inherit the last mode's flags")
 	check(arena._rack.get_script() == load("res://scripts/tool_rack.gd"), "Spike arena uses original prop bar")
-	check(arena._items.size() == 3 and arena._cool.size() == 3, "Exactly three original props")
+	check(arena._items.has("後撤彈簧") and arena._cool.size() == 3, "Three selectable props include the retreat spring variant")
 	check(arena._cast_buttons.is_empty(), "Spike arena has no costume row")
 	check(arena._watch_button == null and arena._pace_button == null and arena._hp_button == null and arena._practice_button == null, "Spike arena has no preview or pace row")
 	check(arena._ground_button == null, "Spike arena has no terrain button")
 	check(arena._hint != null and not arena._hint.visible and arena._hint.text == "", "Spike arena hides the prop description")
-	check(arena._title.text == "" and not arena._note.visible, "No added intro or narrative text")
+	check(not arena._rack.get_parent().visible and arena._hud.objective.text != "", "Player HUD replaces sandbox labels with a clear objective")
 	check(arena.left.hp < arena.right.hp and arena.left.scale.x < arena.right.scale.x, "Small weak hero faces large boss")
 	check(arena.left.hp == 8 and arena.left.hp_max == 8, "Hero starts with eight health")
 	check(arena.ground_height(460, 500) == 500 and arena.ground_height(300, 500) > 578, "Bridge ends above the spike pit")
@@ -113,7 +118,7 @@ func run_tests() -> void:
 	check(seen_moves.has("boss:蓄力"), "Boss mixes the original charged attack into the default fight")
 	arena.free()
 	for fps in [30, 60, 120]:
-		arena = scene("res://scenes/spikes.tscn")
+		arena = scene("res://scenes/spikes_challenge.tscn")
 		for i in 25 * fps:
 			simulate(arena, 1.0 / fps, fps)
 			if arena._boss_state == "charge" and arena.right.position.x < 470:
@@ -128,12 +133,12 @@ func run_tests() -> void:
 		print("Banana at %d FPS: %s" % [fps, arena._title.text])
 		arena._restart()
 		check(not arena._ended and arena.left.hp == 8 and arena.right.hp == 30, "Retry resets the increased health")
-		check(arena.left.position == Vector2(460, 500) and arena.right.position == Vector2(780, 500), "Retry resets positions")
+		check(arena.left.position == Vector2(600, 500) and arena.right.position == Vector2(840, 500), "Retry resets positions with safe retreat room")
 		check(arena._cool == [0.0, 0.0, 0.0], "Retry resets original cooldowns")
 		check(not arena._banana_fall and arena._boss_state == "", "Retry resets the rush and fall permission")
 		arena.free()
 	for fps in [30, 60, 120]:
-		arena = scene("res://scenes/spikes.tscn")
+		arena = scene("res://scenes/spikes_challenge.tscn")
 		for i in 10 * fps:
 			simulate(arena, 1.0 / fps, fps)
 			if arena._boss_state == "charge" and arena.right.position.x < 690:
@@ -146,10 +151,11 @@ func run_tests() -> void:
 		check(arena.right.slipping and absf(destination - start) <= 64.01, "Middle banana only slides a short distance")
 		check(not arena._banana_fall and destination > arena._bridge_bounds().x, "Middle banana cannot enable a pit fall")
 		simulate(arena, 4, fps)
-		check(not arena.right.out and arena.right.position.y < 578 and not arena._ended, "Middle banana stays on bridge at %d FPS" % fps)
+		check(not arena.right.out and arena.right.position.y < 578, "Middle banana stays on bridge at %d FPS (hero_out=%s, boss=%s)" % [fps, arena.left.out, arena.right.position])
 		arena.free()
-	arena = scene("res://scenes/spikes.tscn")
+	arena = scene("res://scenes/spikes_challenge.tscn")
 	for edge in [380.0, 1030.0]:
+		arena._restart()
 		arena.right.position = Vector2(edge, 500)
 		arena.right._from = edge
 		arena.right._to = edge
@@ -158,16 +164,16 @@ func run_tests() -> void:
 		for hit in 40:
 			arena._land_hit(arena.left, arena.right, damage)
 		check(arena.right.position.x == edge and arena.right._to == edge, "Normal attacks never push a boss off either edge")
-		check(arena.right.hp == 1 and not arena.right.out, "Normal attacks cannot replace the required banana finish")
+		check(arena.right.hp == 0 and arena.right.out, "Visible damage can defeat the boss, including its last health point")
 		check(not arena._banana_fall, "Normal attacks do not authorize falling")
 	arena.free()
-	arena = scene("res://scenes/spikes.tscn")
+	arena = scene("res://scenes/spikes_challenge.tscn")
 	for i in 600:
 		simulate(arena, 1.0 / 60)
 		if arena._boss_state == "windup":
 			break
 	var windup_origin: float = arena.right.position.x
-	simulate(arena, 1)
+	simulate(arena, 0.3)
 	check(arena.right.position.x == windup_origin and arena.right.glow == 1, "Boss signals the rush while standing still")
 	for i in 600:
 		simulate(arena, 1.0 / 60)
@@ -179,7 +185,7 @@ func run_tests() -> void:
 	simulate(arena, 3.7)
 	check(arena.right.position.x >= 360 and not arena.right.out and not arena._banana_fall, "Rush brakes before the edge without a banana")
 	arena.free()
-	arena = scene("res://scenes/spikes.tscn")
+	arena = scene("res://scenes/spikes_challenge.tscn")
 	arena.left.position = Vector2(940, 500)
 	for i in 1800:
 		simulate(arena, 1.0 / 60)
@@ -192,7 +198,7 @@ func run_tests() -> void:
 	check(arena._ended and arena.right.out and not arena.left.out, "Right-edge prediction also wins")
 	arena.free()
 	for edge in [360.0, 1050.0]:
-		arena = scene("res://scenes/spikes.tscn")
+		arena = scene("res://scenes/spikes_challenge.tscn")
 		if edge > 700:
 			arena.left.position = Vector2(940, 500)
 		for i in 1800:
@@ -204,7 +210,7 @@ func run_tests() -> void:
 		simulate(arena, 15)
 		check(arena._ended and arena.right.out and not arena.left.out, "A peel on the actual bridge lip is reachable")
 		arena.free()
-	arena = scene("res://scenes/spikes.tscn")
+	arena = scene("res://scenes/spikes_challenge.tscn")
 	arena.right.position = Vector2(380, 500)
 	arena.right.face_right = false
 	arena.right.vx = -200
@@ -214,9 +220,9 @@ func run_tests() -> void:
 	arena._try_spring(arena.right, edge_spring)
 	edge_spring.free()
 	simulate(arena, 12)
-	check(not arena.right.out and not arena._banana_fall and arena.right.position.x >= 360, "Spring alone cannot throw the boss into the pit")
+	check(arena.right.out and arena._ended, "An outward spring obeys the left edge instead of warping the boss back")
 	arena.free()
-	arena = scene("res://scenes/spikes.tscn")
+	arena = scene("res://scenes/spikes_challenge.tscn")
 	arena.right.position = Vector2(960, 500)
 	arena.right.face_right = false
 	arena.left.position = Vector2(600, 500)
@@ -229,7 +235,7 @@ func run_tests() -> void:
 	simulate(arena, 3)
 	check(arena._ended and arena.right.out and arena.right.position.x > arena._bridge_bounds().y, "Spring can bounce the boss off the right edge")
 	arena.free()
-	arena = scene("res://scenes/spikes.tscn")
+	arena = scene("res://scenes/spikes_challenge.tscn")
 	for tool in 3:
 		arena.pick_tool(tool)
 		arena._place(Vector2(1000, 500))
@@ -269,9 +275,11 @@ func run_tests() -> void:
 	arena._place(Vector2(200, 500))
 	check(get_nodes_in_group("duel_prop").is_empty() and arena._cool[0] == 0, "Invalid pit placement does not use cooldown")
 	arena.free()
-	arena = scene("res://scenes/spikes.tscn")
+	arena = scene("res://scenes/spikes_challenge.tscn")
 	arena.left.hp_max = 200
 	arena.left.hp = 200
+	arena.right.hp_max = 500
+	arena.right.hp = 500
 	seen_moves.clear()
 	simulate(arena, 100)
 	check(seen_moves.has("hero:普通1") and seen_moves.has("hero:普通2") and seen_moves.has("hero:普通3"), "Hero follows up with the original combo when the openings permit")

@@ -161,9 +161,8 @@ func glove_tips() -> Array[Vector2]:
 	# 蓄力最後一格，兩隻手套的前端。格子座標，原圖朝右。
 	var gloves: Array[Vector2] = [Vector2(50, 31), Vector2(50, 40)]
 	for glove in gloves:
-		var x := position.x + (glove.x + 0.5 - 32.0) * SCALE * facing
-		var y := position.y + (glove.y + 0.5 - 32.0) * SCALE - FOOT * SCALE
-		tips.append(Vector2(x, y))
+		var local_tip := Vector2((glove.x + 0.5 - 32.0) * SCALE * facing, (glove.y + 0.5 - 32.0) * SCALE - FOOT * SCALE)
+		tips.append(to_global(local_tip))
 	return tips
 
 
@@ -390,7 +389,13 @@ func _sample_ground() -> void:
 
 
 func chest() -> Vector2:
-	return global_position + Vector2(0, -78)
+	return to_global(Vector2(0, -78))
+
+
+func face_toward(target_x: float) -> void:
+	face_right = target_x >= position.x
+	if _sprite != null:
+		_sprite.flip_h = not face_right
 
 
 func _process(delta: float) -> void:

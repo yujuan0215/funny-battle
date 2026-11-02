@@ -1,38 +1,37 @@
-# 主持人切台：尖刺場地分支
+# FUNNY BATTLE · 小小反擊
 
-基於 `funny-battle-main (1).zip`，保留原版四種玩法與排版。
+Godot 4.7 側視道具反擊原型。觀察 Boss 起手，利用場地與道具讓弱小主角借力反擊。
 
-## 開啟
+## 本地試玩
 
-在 Godot 匯入 `project.godot`，按 F5。原本的「開打、干擾決鬥、閃光格檔、大亂鬥」保留，新入口「尖刺場地」在其下方。
+匯入 `project.godot` 後按 F5。預設視窗 1600×900，尖刺場地鏡頭拉近 25%，UI 維持 1280×720 邏輯尺寸。
 
-也可直接匯入 `funny-battle-fork-spikes.zip`；壓縮包包含完整資料夾項目，`project.godot` 位於最外層。
+- **冒險地圖**：第 1 章「木棧前哨」可玩；第 2–6 章可查看背景、配裝與 Boss 構想，標示為規劃中。
+- **試驗場**：主選單或冒險地圖右側的燒瓶圖示。保留遠端原版對打與原難度尖刺挑戰，使用獨立通關紀錄。
+- **第一章**：香蕉、彈簧兩種工具；主角／Boss 各 12 HP，Boss 只有固定單拳與衝撞；有一次落橋安全繩。三次成功彈簧反擊可獲勝。
+- **操作**：1／2 選工具，點橋面部署；預設 0.5×，按住 Space 進入 0.15×。R 重試、Esc 暫停。道具也會影響主角，放置前會顯示接觸範圍。
 
-## 尖刺場地
+## 整體設計
 
-- 沿用原版的血條、角色切換、速度切換、地形編輯與三格道具列。
-- 道具維持原本的 **1 香蕉、2 彈簧、3 時停**，點地面放置，使用原本的冷卻與場上道具數量限制。
-- 主角血量為 **8**，會主動走近、攻擊、接三段連擊，遇到衝刺預警則退避。自行走位會停在橋內，道具與敵方擊退仍有危險。
-- BOSS 交替使用原本的拳／踢／斬連段、遠距離普攻、蓄力攻擊、遠距離追擊與橋邊衝刺。完整出招後會留收招空檔。
-- 主角也會在時停與滑倒造成的機會中，使用原本的遠攻、蓄力與追擊。
-- 香蕉固定只滑 64 距離，雙方都會中招；中央放只會短滑停住，預判 BOSS 衝到橋邊放香蕉才會滑落。
-- 主角普通攻擊不會擊退或打斷 BOSS，BOSS 至少保留 1 點生命，需要香蕉配合尖刺過關。
-- 彈簧與時停保留原本效果；彈簧也無法單獨把 BOSS 弄下橋。
-- 任一方掉進尖刺就敗北；R 重來，Esc 回原選單。
-- 沒有額外的開場說明、旁白、道具庫存或自訂關卡名稱。
+[玩法、六章場地、道具解鎖與最終 Boss](docs/整體玩法與關卡設計.md)。核心循環為「觀察 → 部署 → 連鎖效果 → 反擊」，正式冒險每關最多三種工具。
 
-## 變更範圍
+首關採用像素森林背景。主選單、路線地圖、HUD 與暫停共用刻木銅框、原創像素圖示與實際配送的繁體像素字體；血條有分段與延遲損血顯示。按鈕包含滑入、按下、禁用與鍵盤焦點狀態。共同規範見 [DESIGN.md](DESIGN.md)。後續五章目前只有設計藍圖和背景草圖，尚未實作機關或 Boss。
 
-原版已有檔案僅修改 `scripts/match.gd`，加入一個選單按鈕。原本的 `project.godot`、`duel.gd`、`duelist.gd`、三道具程式、素材與場景都保持原檔。
+原本的開打、干擾決鬥、閃光格檔、大亂鬥仍在 `scenes/main.tscn`。原難度尖刺為 `scenes/spikes_challenge.tscn`。遠端 `62be378` 的對打、依位置發射的彈簧與暫停 UI 保存在 `upstream/level_two/`，由試驗場進入。
 
-新增 `scenes/spikes.tscn`、`scripts/spike_duel.gd`、`scripts/spike_stage.gd`；新場景繼承原版 `duel.tscn` 與 `duel.gd`，尖刺地形繼承原版 `stage_edit.gd`。
+素材紀錄：[森林背景與生成提示詞](assets/environments/art-direction.md)、[道具來源](assets/props/CREDITS.md)、[像素字體來源與 OFL 授權](assets/fonts/CREDITS.md)。UI 圖記與木銅九宮格由本專案原創程式繪製並快取。森林背景是原型視覺樣板，未宣稱已鎖定量產調色盤。
 
-## 驗證與打包
+## 驗證
 
 ```sh
 Godot --headless --editor --import --quit
 Godot --headless --script res://tests/fork_test.gd
-python3 tools/package_project.py
+Godot --headless --fixed-fps 120 --script res://tests/test_spring_counter.gd
+Godot --headless --script res://tests/test_player_feedback.gd
+Godot --headless --script res://tests/test_intro_campaign.gd
+Godot --headless --script res://tests/test_pixel_ui.gd
 ```
 
-已通過 100 項檢查，包含主角主動走位、8 點血量、雙方三段連擊、混合招式、原選單與四模式、三道具、普通攻擊無擊退、中央香蕉短滑、30/60/120 FPS 下的邊緣預判過關、左右橋邊與重試。預覽見 `docs/previews/`。
+311 項檢查涵蓋原模式、試驗場、30／60／120 FPS 的實際香蕉／彈簧反擊、入門難度、安全繩、通關紀錄、暫停／重試、冒險藍圖與未解鎖工具阻擋，以及三種視窗比例的控制項邊界、焦點、真實 HP 與繁體字形。所有自動測試使用獨立紀錄。
+
+開發執行檔短測可用 `Godot --script res://tools/profile_game.gd`，每場景暖機 2 秒後取樣 3 秒。M5 Pro／1600×900 本次主選單、冒險地圖、首關皆約 120 FPS；不是發布版、長時間或低階裝置保證。Metal 的 GPU 計時若為 0，代表此路徑沒有有效數據。

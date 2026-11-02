@@ -219,8 +219,7 @@ func _process(delta: float) -> void:
 		_counter_notice_time = maxf(_counter_notice_time - delta * _pace, 0.0)
 	if _big_cd > 0.0:
 		_big_cd = maxf(_big_cd - delta, 0.0)
-	for i in _cool.size():
-		_cool[i] = maxf(_cool[i] - delta, 0.0)
+	_tick_tool_cooldowns(delta)
 	if qte:
 		_think(left, right)
 		_think(right, left)
@@ -270,6 +269,11 @@ func _process(delta: float) -> void:
 	_beam_was = beam
 	_refresh_hint()
 	_refresh_counter_hud()
+
+
+func _tick_tool_cooldowns(delta: float) -> void:
+	for i in _cool.size():
+		_cool[i] = maxf(_cool[i] - delta, 0.0)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -1007,8 +1011,8 @@ func _resolve_spring_shot(attacker: Duelist, defender: Duelist, move: Dictionary
 	# 在槍口影格才檢查射程、朝向與高度，跳開不代表保證命中。
 	var hit := _spring_can_shoot(attacker, defender) and _facing_hit(attacker, defender, float(move["range"]))
 	var facing := 1.0 if attacker.face_right else -1.0
-	var muzzle := attacker.chest() + Vector2(facing * 54.0, -8.0)
-	var end := Vector2(defender.position.x, muzzle.y) if hit else muzzle + Vector2(facing * float(move["range"]), 0)
+	var muzzle := attacker.chest() + Vector2(facing * 54.0 * attacker.scale.x, -8.0 * attacker.scale.y)
+	var end := defender.chest() if hit else muzzle + Vector2(facing * float(move["range"]), 0)
 	_spring_fx("shot", muzzle, end, facing, hit)
 	if hit:
 		_land_hit(attacker, defender, move)
@@ -1120,7 +1124,7 @@ func _play_module(body: Duelist, other: Duelist, id: String) -> void:
 		return
 	if id == "彈簧開火":
 		body.clear_spring_shot()
-	var m: Dictionary = _moves[id]
+	var m: Dictionary = _move_for(body, id)
 	var gap := other.position.x - body.position.x
 	var dist := absf(gap)
 	var dir := signf(gap) if gap != 0.0 else (1.0 if body.face_right else -1.0)
@@ -1154,6 +1158,10 @@ func _play_module(body: Duelist, other: Duelist, id: String) -> void:
 	else:
 		body.shot_frame = -1
 	_title.text = _move_title(id)
+
+
+func _move_for(_body: Duelist, id: String) -> Dictionary:
+	return _moves[id]
 
 
 func _approach(body: Duelist, other: Duelist) -> void:

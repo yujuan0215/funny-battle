@@ -1,5 +1,5 @@
 extends Control
-## Upstream prop art and vector cues shared by the HUD, tool cards and help.
+## Shared pixel pictograms for the HUD, tool cards, deployment and help.
 
 const BANANA := preload("res://assets/props/banana.png")
 const SPRING := preload("res://assets/props/spring.png")

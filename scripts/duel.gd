@@ -61,6 +61,7 @@ var _cast_buttons: Dictionary = {}
 const _STAGE := preload("res://scripts/stage_edit.gd")
 const _RACK := preload("res://scripts/tool_rack.gd")
 const _SPRING_FX := preload("res://scripts/spring_shot_fx.gd")
+const Placement := preload("res://scripts/pixel_placement.gd")
 const TOOL_COOL: Array[float] = [1.6, 2.0, 2.4]
 
 var _beam_was := false
@@ -119,8 +120,8 @@ func _draw() -> void:
 	if not _preview and _tool == 1 and _spring_retreat and not _stage.editing:
 		_draw_spring_placement()
 	if _spring_practice and not _practice_started:
-		draw_arc(left.position + Vector2(0, -4), 44, 0, TAU, 40, Color(0.3, 1, 0.88, 0.8), 3.0)
-		draw_line(left.position + Vector2(-36, 6), left.position + Vector2(36, 6), Color(0.3, 1, 0.88), 4.0)
+		Placement.target(self, left.position + Vector2(0, -4), 44, Placement.PixelSkin.HERO)
+		Placement.line(self, left.position + Vector2(-36, 6), left.position + Vector2(36, 6), Placement.PixelSkin.HERO)
 
 
 func _draw_spring_aim(body: Duelist) -> void:
@@ -132,13 +133,10 @@ func _draw_spring_aim(body: Duelist) -> void:
 	var a := body.chest()
 	var b := target.chest()
 	var in_range := _spring_can_shoot(body, target)
-	var ink := Color(0.3, 1.0, 0.88, 0.7) if in_range else Color(1.0, 0.73, 0.3, 0.65)
-	draw_dashed_line(a, b, ink, 1.5, 9.0)
-	for side in [-1.0, 1.0]:
-		draw_line(b + Vector2(side * 22, -14), b + Vector2(side * 22, 14), ink, 2.0)
-		draw_line(b + Vector2(side * 22, -14), b + Vector2(side * 12, -14), ink, 2.0)
-		draw_line(b + Vector2(side * 22, 14), b + Vector2(side * 12, 14), ink, 2.0)
-	draw_arc(a, 28, -PI * 0.5, -PI * 0.5 + TAU * clampf(body.spring_shot_time / 1.2, 0, 1), 32, ink, 2.0)
+	var ink := Placement.PixelSkin.HERO if in_range else Placement.PixelSkin.GOLD
+	Placement.line(self, a, b, ink, true)
+	Placement.target(self, b, 22, ink)
+	Placement.ellipse(self, a, Vector2.ONE * 28, ink, clampf(body.spring_shot_time / 1.2, 0, 1))
 
 
 func _draw_spring_placement() -> void:
@@ -148,12 +146,11 @@ func _draw_spring_placement() -> void:
 	var spot := _prop_at("spring", clampf(at.x, STAGE_MIN, STAGE_MAX), at.y)
 	var body := _nearest_body(spot + Vector2(0, 18))
 	var dir := _retreat_direction(body, _other(body))
-	var ink := Color(0.3, 1.0, 0.88, 0.55)
+	var ink := Placement.PixelSkin.HERO if _cool[1] <= 0 else Placement.PixelSkin.DANGER
 	var tip := spot + Vector2(dir * 86, -30)
-	draw_arc(spot, 35, 0, TAU, 32, ink, 1.5)
-	draw_line(spot, tip, ink, 2.5)
-	draw_line(tip, tip + Vector2(-dir * 13, -3), ink, 2.5)
-	draw_line(tip, tip + Vector2(-dir * 8, 11), ink, 2.5)
+	Placement.footprint(self, spot + Vector2(0, 18), 35, ink)
+	Placement.spring(self, spot, _cool[1] <= 0)
+	Placement.arrow(self, spot, tip, ink)
 
 
 func _nearest_body(at: Vector2) -> Duelist:

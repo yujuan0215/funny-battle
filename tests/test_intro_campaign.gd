@@ -148,7 +148,7 @@ func _run() -> void:
 	check(levels._levels[0].focus_mode == Control.FOCUS_ALL, "Closing the blueprint restores map navigation")
 	levels.free()
 	var lab = scene("res://scenes/test_lab.tscn")
-	check(lab.testing and lab._levels.size() == 2, "Both previous arenas remain available in the test lab")
+	check(lab.testing and lab._levels.size() == 6, "Both original arenas, three action trials and the terrain hub remain in the laboratory")
 	check(Progress.SAVE_PATH != Progress.LAB_SAVE_PATH, "Experiment clears cannot unlock the adventure")
 	lab.free()
 	clean()

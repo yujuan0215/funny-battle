@@ -64,7 +64,7 @@ func _ready() -> void:
 	margin.add_child(stack)
 	var header := HBoxContainer.new()
 	stack.add_child(header)
-	var title := _label("試驗場" if testing else "冒險地圖", 34)
+	var title := _label("實驗關卡" if testing else "冒險地圖", 34)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(title)
 	if not testing:
@@ -83,7 +83,7 @@ func _ready() -> void:
 	stack.add_child(center)
 	if testing:
 		_grid = GridContainer.new()
-		(_grid as GridContainer).columns = 2
+		(_grid as GridContainer).columns = 3
 		_grid.add_theme_constant_override("h_separation", 24)
 		_grid.add_theme_constant_override("v_separation", 24)
 	else:
@@ -95,10 +95,14 @@ func _ready() -> void:
 		chapters = [
 			{"id": 2, "name": "對打試驗", "theme": "clock", "tools": [0, 1, 2], "playable": true, "scene": LEVEL_TWO},
 			{"id": 3, "name": "尖刺試驗", "theme": "forge", "tools": [0, 1, 2], "playable": true, "scene": LEVEL_THREE},
+			{"id":101,"name":"動作Ⅰ · 斷柱前哨","theme":"forest","tools":[0,1],"playable":true,"scene":"res://scenes/action_trial_1.tscn"},
+			{"id":102,"name":"動作Ⅱ · 懸橋機關","theme":"valley","tools":[0,1],"playable":true,"scene":"res://scenes/action_trial_2.tscn"},
+			{"id":103,"name":"動作Ⅲ · 熔爐核心","theme":"forge","tools":[0,1],"playable":true,"scene":"res://scenes/action_trial_3.tscn"},
+			{"id":200,"name":"舊版場地 · 3–6","theme":"tower","tools":[1],"playable":true,"scene":"res://scenes/legacy_chapters.tscn"},
 		]
 	for chapter in chapters:
 		_add_chapter(chapter)
-	var footer := _label("原版對打與尖刺挑戰" if testing else "借力反擊", 24, PixelSkin.PAPER)
+	var footer := _label("原型對打　即時動作　舊版場地" if testing else "借力反擊", 24, PixelSkin.PAPER)
 	footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	stack.add_child(footer)
 	_stage.resized.connect(_layout)
@@ -166,7 +170,9 @@ func _add_chapter(chapter: Dictionary) -> void:
 		symbols.append(Catalog.TOOL_ICONS[tool])
 	loadout.set_symbols(symbols)
 	row.add_child(loadout)
-	if chapter["playable"] and Progress.is_cleared(number, progress_path):
+	var badge_number := number - 100 if number in [101, 102, 103] else number
+	var badge_path := "user://action_trial_progress.json" if number in [101, 102, 103] else progress_path
+	if chapter["playable"] and Progress.is_cleared(badge_number, badge_path):
 		var cleared := _label("✓", 20, Color("9bc991"))
 		cleared.name = "ClearedBadge"
 		button.add_child(cleared)
@@ -181,7 +187,7 @@ func _layout() -> void:
 	var width := _stage.size.x
 	if testing:
 		for button in _levels:
-			button.custom_minimum_size = Vector2(clampf((width - 180) / 2 - 24, 240, 380), 220)
+			button.custom_minimum_size = Vector2(clampf((width - 180) / 3 - 24, 230, 340), 190)
 	else:
 		for i in _levels.size():
 			var button := _levels[i]

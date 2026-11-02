@@ -1,0 +1,21 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+ACTION n=1 hard=false fps=30 hero=5 boss=0 hits=3 t=11.45
+ACTION n=2 hard=false fps=30 hero=6 boss=0 hits=0 t=6.22
+ACTION n=3 hard=false fps=30 hero=6 boss=0 hits=3 t=11.05
+ACTION n=1 hard=true fps=30 hero=3 boss=0 hits=3 t=9.58
+ACTION n=2 hard=true fps=30 hero=3 boss=0 hits=0 t=6.22
+ACTION n=3 hard=true fps=30 hero=3 boss=0 hits=3 t=10.45
+ACTION n=1 hard=false fps=60 hero=5 boss=0 hits=3 t=11.43
+ACTION n=2 hard=false fps=60 hero=6 boss=0 hits=0 t=6.20
+ACTION n=3 hard=false fps=60 hero=6 boss=0 hits=3 t=10.98
+ACTION n=1 hard=true fps=60 hero=3 boss=0 hits=3 t=9.53
+ACTION n=2 hard=true fps=60 hero=3 boss=0 hits=0 t=6.20
+ACTION n=3 hard=true fps=60 hero=3 boss=0 hits=3 t=10.40
+ACTION n=1 hard=false fps=120 hero=5 boss=0 hits=3 t=11.42
+ACTION n=2 hard=false fps=120 hero=6 boss=0 hits=0 t=6.18
+ACTION n=3 hard=false fps=120 hero=6 boss=0 hits=3 t=10.93
+ACTION n=1 hard=true fps=120 hero=3 boss=0 hits=3 t=9.53
+ACTION n=2 hard=true fps=120 hero=3 boss=0 hits=0 t=6.18
+ACTION n=3 hard=true fps=120 hero=3 boss=0 hits=3 t=10.34
+Action trials: 83 checks, 0 failures

@@ -5,3 +5,6 @@ tmp/
 
 # Microsoft Office temporary lock files
 ~$*
+
+# Isolated automated-play save files
+.test-data/

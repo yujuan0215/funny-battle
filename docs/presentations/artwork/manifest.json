@@ -1,0 +1,23 @@
+{
+  "generator": "built-in image_gen",
+  "assets": [
+    {
+      "key": "cover",
+      "prompt": "Use case: stylized-concept. Create a brand-new 16:9 widescreen pixel-art illustration to serve as a title-slide background for the indie game Funny Battle. The attached image is a STYLE REFERENCE ONLY, not an edit target. Keep its sophisticated, crisp, visibly blocky pixel art, midnight blue forest, ancient stone windmill towers, warm amber windows, and layered atmospheric depth. Composition: left 48 percent is quiet almost-black navy misty sky and low-detail shadow, with NO prominent moon or objects behind the future title at left-center. The right half contains a dramatic moon behind a ruined castle windmill, a winding stone bridge over a deep forest ravine, and a few amber lanterns. Bottom edge shows a close-up broken wooden bridge and mossy stones, cropped naturally, as an evocative foreground. Right-center is the focal scene, cinematic side-view wide shot. Rich depth and environmental storytelling, coherent limited blue/copper palette, polished pixel-game key art. Keep all text, letters, numbers, logos, captions and UI completely absent. Do not create slide mockups or frames. Native 16:9 image, ideally 1920x1080."
+    },
+    {
+      "key": "journal",
+      "prompt": "Use case: productivity-visual. Create a full-bleed 16:9 widescreen PIXEL ART background for a game-design presentation, one cohesive composition rather than a mockup. An adventurer's large aged ivory field journal sheet lies almost flat on an old dark blue wooden workbench. The parchment occupies 92 percent of the canvas, softly irregular stepped pixel edges 20 pixels from the outer edges, a subtle vertical fold at x 65 percent, beautifully restrained warm paper texture. Keep the ENTIRE central 85 percent of the paper very light, clean, flat and blank to accept large editable Chinese slide text and rectangular screenshots later. No markings or lines across this blank center. Decorative storytelling stays at extreme edges: a tiny brass coil spring and blue pencil partially cropped in the bottom-right corner, a short tan leather book strap and small dull brass rivets at extreme top-left, a hint of copper gear teeth beyond the paper on the far-right edge. Palette: soft warm cream parchment, faded tea stain edges, deep ink navy desk, muted brass, amber. Polished, crisp blocky pixel art like a sophisticated retro platform game, with 3-4 pixel clusters rather than smooth painted shading. Broad unobstructed writing area is essential. NO text, NO lettering, NO labels, NO arrows, NO symbols drawn in the center, NO boxes/cards or UI, NO charts, NO watermark. Native 16:9 image, ideally 1920x1080."
+    },
+    {
+      "key": "workshop",
+      "prompt": "Use case: productivity-visual. Create a brand-new 16:9 pixel-art background for a polished indie game presentation. It is an atmospheric night-time clockwork workshop, viewed straight-on as a very restrained set behind slide text and gameplay screenshots. Overall canvas is almost-black indigo and faded teal, with broad low-detail quiet negative space covering the central 88 percent, including the full top-center where large titles will be placed. Small richly detailed decorative storytelling restricted to EXTREME margins: cropped copper gear teeth, a chain and small amber lantern at the far right edge, a low wooden workbench edge and a tiny coiled spring at bottom-left, distant shadowy stone arch silhouettes at far-left. Warm copper versus deep blue palette. The decoration should feel lovingly crafted in crisp pixel clusters, like an excellent adventure game's pause-screen atmosphere, but must not depict any menus, interface, panels, frames or buttons. The center is a softly textured dark blue near-flat wall, not a brightly lit scenic picture. Readability for cream text is crucial. No lettering, words, numbers, logos, HUD, labels, symbols or watermark. Absolutely no paper area in this one; this is the DARK companion background to a cream adventure journal. Native 16:9 widescreen, ideally 1920x1080."
+    }
+  ],
+  "files": {
+    "cover": "moonlit-outpost.png",
+    "journal": "adventure-journal.png",
+    "workshop": "clockwork-workshop.png"
+  },
+  "purpose": "Presentation decoration only. Gameplay screenshots remain original project captures."
+}

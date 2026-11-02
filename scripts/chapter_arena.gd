@@ -231,12 +231,12 @@ func _draw_placement_preview() -> void:
 		if not data.is_empty() and _nearest_body(data["floor"]) == right:
 			var spot: Vector2 = data["spot"]
 			var ink := Color("8ace85") if data["available"] else Color("ed7758")
-			DuelProp.draw_spring(self, 0, Color(1, 1, 1, 0.6), spot)
+			Placement.footprint(self, data["floor"], data["radius"], ink)
+			Placement.target(self, right.position + Vector2(0, -4), 24, Placement.PixelSkin.DANGER)
+			Placement.spring(self, spot, data["available"])
 			var tip := spot + Vector2(0, -130)
-			draw_dashed_line(spot, tip, ink, 2, 8)
-			draw_line(tip, tip + Vector2(-10, 14), ink, 2)
-			draw_line(tip, tip + Vector2(10, 14), ink, 2)
-			draw_dashed_line(tip, tip + Vector2(wind * 90, 0), ink, 2, 8)
+			Placement.arrow(self, spot, tip, ink)
+			Placement.arrow(self, tip, tip + Vector2(wind * 90, 0), ink)
 			return
 	if _tool <= 2:
 		super._draw_placement_preview()
@@ -245,10 +245,10 @@ func _draw_placement_preview() -> void:
 	if data.is_empty():
 		return
 	var ink := Color("8ace85") if data["available"] else Color("ed7758")
-	ArenaHud.Icons.paint(self, "sandbag" if _tool == 3 else "magnet", data["spot"] + Vector2(0, -20), 32, ink)
-	draw_dashed_line(data["floor"] + Vector2(-36, 0), data["floor"] + Vector2(36, 0), ink, 2, 6)
+	ArenaHud.Icons.paint(self, "sandbag" if _tool == 3 else "magnet", data["spot"] + Vector2(0, -20), 36, Color(1, 1, 1, 0.85 if data["available"] else 0.4))
+	Placement.footprint(self, data["floor"], data["radius"], ink)
 	if _tool == 4:
-		draw_dashed_line(Vector2(crate_x, 474), data["floor"] - Vector2(0, 26), ink, 2, 8)
+		Placement.arrow(self, Vector2(crate_x, 474), data["floor"] - Vector2(0, 26), ink)
 
 
 func _place(at: Vector2) -> void:

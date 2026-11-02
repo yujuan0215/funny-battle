@@ -187,7 +187,7 @@ func _run() -> void:
 	levels.progress_path = TEST_SAVE
 	root.add_child(levels)
 	check(levels.find_child("Level3", true, false).get_node_or_null("ClearedBadge") != null, "A new level-select scene reads the saved completion badge")
-	check(levels.testing and levels._levels.size() == 2, "Old duel and spike challenge live in the separate test lab")
+	check(levels.testing and levels._levels.size() == 6, "Old duel and spike challenge live in the separate test lab")
 	levels.free()
 
 	game = arena(true, LOSS_SAVE)

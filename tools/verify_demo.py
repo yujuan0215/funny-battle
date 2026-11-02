@@ -9,7 +9,7 @@ logs = root / 'qa' / 'test-logs'
 logs.mkdir(parents=True, exist_ok=True)
 (root / '.test-data').mkdir(exist_ok=True)
 results = []
-for name in ['fork_test', 'test_spring_counter', 'test_player_feedback', 'test_intro_campaign', 'test_pixel_ui', 'test_vertical_slice']:
+for name in ['fork_test', 'test_spring_counter', 'test_player_feedback', 'test_intro_campaign', 'test_pixel_ui', 'test_vertical_slice', 'test_action_trials', 'test_world_terrain']:
     cmd = [args.godot, '--headless', '--log-file', str(logs / (name + '.log')), '--script', 'res://tests/' + name + '.gd']
     run = subprocess.run(cmd, cwd=root, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=120)
     (logs / (name + '-output.log')).write_text(run.stdout)

@@ -1,7 +1,5 @@
 Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
 
-ERROR: Condition "ret != noErr" is true. Returning: ""
-   at: get_system_ca_certificates (platform/macos/os_macos.mm:1035)
 No intervention: 失敗
 Default battle moves: ["hero:普通1", "boss:普通1", "boss:普通2", "boss:普通3", "hero:普通2", "hero:普通3", "boss:遠距離普攻", "boss:蓄力"]
 Banana at 30 FPS: 勝利

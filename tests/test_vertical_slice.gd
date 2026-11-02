@@ -16,7 +16,7 @@ func check(ok: bool, message: String) -> void:
 		push_error(message)
 
 func scene(number: int):
-	var game = load(Catalog.chapter(number)["scene"]).instantiate()
+	var game = load("res://scenes/legacy_chapter_%d.tscn" % number if number >= 3 else Catalog.chapter(number)["scene"]).instantiate()
 	game.process_mode = Node.PROCESS_MODE_DISABLED
 	game.progress_path = SAVE
 	root.add_child(game)

@@ -34,5 +34,17 @@
     "exit_code": 0,
     "passed": true,
     "errors": []
+  },
+  {
+    "suite": "test_action_trials",
+    "exit_code": 0,
+    "passed": true,
+    "errors": []
+  },
+  {
+    "suite": "test_world_terrain",
+    "exit_code": 0,
+    "passed": true,
+    "errors": []
   }
 ]

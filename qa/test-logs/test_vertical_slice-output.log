@@ -1,7 +1,5 @@
 Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
 
-ERROR: Condition "ret != noErr" is true. Returning: ""
-   at: get_system_ca_certificates (platform/macos/os_macos.mm:1035)
 PLAY chapter=2 fps=30 time=4.8 hero=6 boss=0 phase=0 props=4 counters=4
 PLAY chapter=3 fps=30 time=14.2 hero=6 boss=0 phase=0 props=10 counters=7
 PLAY chapter=4 fps=30 time=9.7 hero=5 boss=0 phase=0 props=6 counters=2

@@ -1,13 +1,13 @@
 extends RefCounted
-## Original 12 px pictograms, shared across every screen. No emoji/font glyphs.
+## Shared pixel pictograms and integer-scaled prop sprites. No emoji/font glyphs.
 
 const PixelSkin := preload("res://scripts/pixel_skin.gd")
+const BANANA := preload("res://assets/props/banana.png")
+const SPRING := preload("res://assets/props/spring.png")
 const GLYPHS := {
 	"heart": ["............", ".oooo..oooo.", "oxhhxooxhhxo", "oxxxxxxxxxxo", "oxxxxxxxxxxo", ".oxxxxxxxxo.", "..oxxxxxxo..", "...oxxxxo...", "....oxxo....", ".....oo.....", "............", "............"],
 	"emptyheart": ["............", ".oooo..oooo.", "ox..xoo...xo", "ox........xo", "ox........xo", ".ox......xo.", "..ox....xo..", "...ox..xo...", "....oxxo....", ".....oo.....", "............", "............"],
 	"boss": ["..oo....oo..", ".oxxo..oxxo.", "..oxxxxxxo..", ".oxxxxxxxxo.", "oxxhhhhhxxxo", "oxxooxxooxxo", "oxxooxxooxxo", ".oxxxxxxxxo.", "..oxoxoxo...", "..oxxxxxo...", "...ooooo....", "............"],
-	"spring": ["............", ".oooooooooo.", "oyhhhhhhhyo.", ".oooooooooo.", "..occ.....o.", "...oocccco..", "..occcoo....", "...oocccco..", "..occcoo....", ".oooooooooo.", "obbbbbbbbbo.", ".oooooooooo."],
-	"banana": [".........oo.", "........oyyo", ".......oyhyo", "......oyhyo.", ".....oyhyo..", "....oyhhyo..", ".ooooyhhyo..", "oyyyhhhhyo..", "oyyhhhhyyo..", ".oyyyyyyo...", "..oooooo....", "............"],
 	"clock": ["....oooo....", "....obbo....", "....oooo....", "..oobbbboo..", ".obhhhhhhbo.", "obhhhohhhhbo", "obhhhohhhhbo", "obhhhoohhhbo", "obhhhhhhhhbo", ".obhhhhhhbo.", "..oobbbboo..", "....oooo...."],
 	"shield": [".....oo.....", ".ooooxxoooo.", "oxxxxxxxxxxo", "oxxxhhhhxxxo", "oxxxxhhxxxxo", "oxhhhhhhhhxo", "oxxxxhhxxxxo", ".oxxxhhxxxo.", "..oxxxxxxo..", "...oxxxxo...", "....oxxo....", ".....oo....."],
 	"lock": ["....oooo....", "...oxxxxo...", "..oxxooxxo..", "..oxo..oxo..", "..oxo..oxo..", ".oooooooooo.", ".obhhhhhhbo.", ".obbbxxbbbo.", ".obbbxxbbbo.", ".obbbbbbbbo.", ".oooooooooo.", "............"],
@@ -35,6 +35,12 @@ static var _textures: Dictionary = {}
 
 
 static func paint(canvas: CanvasItem, kind: String, center: Vector2, span: float, ink: Color) -> bool:
+	if kind in ["banana", "spring"]:
+		var texture: Texture2D = BANANA if kind == "banana" else SPRING
+		var extent := texture.get_size() * maxf(1, floorf(span / maxf(texture.get_width(), texture.get_height())))
+		# Natural palettes, shared by the toolbar, help, preview and deployed props.
+		canvas.draw_texture_rect(texture, Rect2((center - extent * 0.5).round(), extent), false, Color(1, 1, 1, ink.a))
+		return true
 	var key := {"back": "left", "exit": "left", "rush": "right", "strike": "charge", "diamond": "shield"}.get(kind, kind) as String
 	if not GLYPHS.has(key):
 		return false

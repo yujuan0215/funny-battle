@@ -1,0 +1,15 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+BOSS chapter=3 fps=30 hero=5 boss=0 phase=0 props=10
+BOSS chapter=4 fps=30 hero=6 boss=0 phase=0 props=7
+BOSS chapter=5 fps=30 hero=6 boss=0 phase=0 props=4
+BOSS chapter=6 fps=30 hero=6 boss=0 phase=2 props=12
+BOSS chapter=3 fps=60 hero=4 boss=0 phase=0 props=14
+BOSS chapter=4 fps=60 hero=6 boss=0 phase=0 props=7
+BOSS chapter=5 fps=60 hero=6 boss=0 phase=0 props=4
+BOSS chapter=6 fps=60 hero=6 boss=0 phase=2 props=12
+BOSS chapter=3 fps=120 hero=5 boss=0 phase=0 props=14
+BOSS chapter=4 fps=120 hero=6 boss=0 phase=0 props=7
+BOSS chapter=5 fps=120 hero=6 boss=0 phase=0 props=4
+BOSS chapter=6 fps=120 hero=6 boss=0 phase=2 props=12
+RESULT: 121 checks, 0 failures

@@ -397,30 +397,27 @@ func _draw_placement_preview() -> void:
 	var preview := _placement_preview(get_global_mouse_position())
 	if preview.is_empty():
 		return
-	var ink := Color(0.35, 0.94, 0.84, 0.7) if preview["available"] else Color(1.0, 0.48, 0.39, 0.6)
+	var ink := Placement.PixelSkin.HERO if preview["available"] else Placement.PixelSkin.DANGER
 	var floor_at: Vector2 = preview["floor"]
 	var spot: Vector2 = preview["spot"]
 	var radius: float = preview["radius"]
-	var ellipse := PackedVector2Array()
-	for i in 49:
-		var angle := TAU * i / 48
-		ellipse.append(floor_at + Vector2(cos(angle) * radius, sin(angle) * 9))
-	draw_polyline(ellipse, ink, 1.5, true)
-	if _tool != 1:
-		ArenaHud.Icons.paint(self, ["banana", "spring", "clock"][_tool], spot + Vector2(0, -16), 28, ink)
+	Placement.footprint(self, floor_at, radius, ink)
+	var tint := Color(1, 1, 1, 0.85 if preview["available"] else 0.4)
+	if _tool == 0:
+		DuelProp.draw_banana(self, spot, tint)
+	elif _tool == 2:
+		ArenaHud.Icons.paint(self, "clock", spot + Vector2(0, -16), 36, tint)
 	if not preview["available"]:
 		ArenaHud.Icons.paint(self, "miss", spot + Vector2(0, -51), 15, ink)
 	for body: Duelist in preview["affected"]:
-		var side_ink := Color(0.35, 0.94, 0.84, 0.9) if body == left else Color(1.0, 0.48, 0.39, 0.9)
-		draw_arc(body.position + Vector2(0, -4), 25, 0, TAU, 32, side_ink, 2)
+		var side_ink := Placement.PixelSkin.HERO if body == left else Placement.PixelSkin.DANGER
+		Placement.target(self, body.position + Vector2(0, -4), 24, side_ink)
 	if _tool == 1:
 		var body := _nearest_body(floor_at)
 		var dir := _retreat_direction(body, _other(body))
-		DuelProp.draw_spring(self, dir, Color(1, 1, 1, 0.65 if preview["available"] else 0.3), spot)
+		Placement.spring(self, spot, preview["available"])
 		var tip := spot + Vector2(dir * 90, -38)
-		draw_dashed_line(spot, tip, ink, 2, 8)
-		draw_line(tip, tip + Vector2(-dir * 12, -2), ink, 2)
-		draw_line(tip, tip + Vector2(-dir * 8, 10), ink, 2)
+		Placement.arrow(self, spot, tip, ink)
 
 
 func _draw() -> void:
@@ -906,5 +903,7 @@ func _hide_arena_chrome() -> void:
 
 
 func _notification(what: int) -> void:
+	if has_meta("automated_capture"):
+		return
 	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and is_instance_valid(_hud) and _round_state == RoundState.PLAYING:
 		_pause_round()

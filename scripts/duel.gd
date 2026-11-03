@@ -6,12 +6,7 @@ static var qte := false
 static var brawl := false
 static var brawl_count := 4
 static var show_hp := true
-static var campaign_level := 0
 
-const MenuUi := preload("res://scripts/menu_ui.gd")
-const IconButton := preload("res://scripts/icon_button.gd")
-const PAUSE_SIZE := 64.0
-const PAUSE_MARGIN := 16.0
 const SHEET_PATH := "res://docs/攻擊模組 - 攻擊模組.csv"
 const STAGE_MIN := 80.0
 const STAGE_MAX := 1200.0
@@ -29,23 +24,17 @@ const PREVIEW_NOTES := {
 	"下落": "上升先收膝，到最高點才把踢擊打出。下墜時水平 70 以內才打中。",
 	"香蕉滑鏟": "朝對方跑、距離超過 140 時踩到。沿著跑的方向滑鏟，不會變成滑倒。",
 	"香蕉滑倒": "距離不超過 140，或不是朝對方跑。人直接滑倒；站著踩則什麼都不會發生。",
-	"彈簧": "放在角色左/右決定往右/左，正下方往上。往敵人方向是跳高下落，往反方向是後撤開火。",
-	"彈簧開火": "把彈簧放在角色與敵人相反的一側，角色會往後撤。落地後，距離在 140 到 360、雙方高度接近時開一槍。",
+	"彈簧": "踩到才彈。站著是小跳；跑著或出招時是大拋。大拋上升收膝，到最高點才踢出。",
+	"彈簧開火": "後撤彈簧把角色往敵人反方向彈開。落地後，距離在 140 到 360、雙方高度接近時開一槍。不需要時停；受擊會打斷機會。",
 	"時停": "放下先亮圈。圈收起來時還站在裡面的人才定住。另一人在 90 到 250 會開火，250 到 460 會蓄力。",
 }
 
 var _sparks: Array[Dictionary] = []
 var _moves: Dictionary = {}
 var _items: Dictionary = {}
-var _spring_retreat_row: Dictionary = {}
 var _shake := 0.0
 var _title: Label
 var _hint: Label
-var _pause_button: Button
-var _pause_panel: Control
-var _success_panel: Control
-var _next_button: Button
-var _success_open := false
 var _prompt: Label
 var _wash: ColorRect
 var _tool := 0
@@ -72,9 +61,8 @@ var _cast_buttons: Dictionary = {}
 const _STAGE := preload("res://scripts/stage_edit.gd")
 const _RACK := preload("res://scripts/tool_rack.gd")
 const _SPRING_FX := preload("res://scripts/spring_shot_fx.gd")
+const Placement := preload("res://scripts/pixel_placement.gd")
 const TOOL_COOL: Array[float] = [1.6, 2.0, 2.4]
-const SPRING_UP_DEADZONE := 14.0
-const SPRING_AIM_RANGE := 160.0
 
 var _beam_was := false
 var _stage
@@ -84,6 +72,8 @@ var _count_button: Button
 var _extras: Array[Duelist] = []
 var _goal: Duelist
 var _brawl_over := false
+var _spring_retreat := true
+var _spring_mode_button: Button
 var _practice_button: Button
 var _counter_label: Label
 var _counter_notice := ""
@@ -127,14 +117,11 @@ func _draw() -> void:
 	for body in _bodies():
 		_draw_beam(body)
 		_draw_spring_aim(body)
-	if not _preview and _tool == 1 and not _stage.editing:
+	if not _preview and _tool == 1 and _spring_retreat and not _stage.editing:
 		_draw_spring_placement()
 	if _spring_practice and not _practice_started:
-		var target := left.position + Vector2(24, 0)
-		draw_arc(target, 22, 0, TAU, 32, Color(0.3, 1, 0.88, 0.8), 3.0)
-		draw_line(target + Vector2(18, -34), target + Vector2(-18, -34), Color(0.3, 1, 0.88), 3.0)
-		draw_line(target + Vector2(-18, -34), target + Vector2(-11, -39), Color(0.3, 1, 0.88), 3.0)
-		draw_line(target + Vector2(-18, -34), target + Vector2(-11, -29), Color(0.3, 1, 0.88), 3.0)
+		Placement.target(self, left.position + Vector2(0, -4), 44, Placement.PixelSkin.HERO)
+		Placement.line(self, left.position + Vector2(-36, 6), left.position + Vector2(36, 6), Placement.PixelSkin.HERO)
 
 
 func _draw_spring_aim(body: Duelist) -> void:
@@ -146,72 +133,24 @@ func _draw_spring_aim(body: Duelist) -> void:
 	var a := body.chest()
 	var b := target.chest()
 	var in_range := _spring_can_shoot(body, target)
-	var ink := Color(0.3, 1.0, 0.88, 0.7) if in_range else Color(1.0, 0.73, 0.3, 0.65)
-	draw_dashed_line(a, b, ink, 1.5, 9.0)
-	for side in [-1.0, 1.0]:
-		draw_line(b + Vector2(side * 22, -14), b + Vector2(side * 22, 14), ink, 2.0)
-		draw_line(b + Vector2(side * 22, -14), b + Vector2(side * 12, -14), ink, 2.0)
-		draw_line(b + Vector2(side * 22, 14), b + Vector2(side * 12, 14), ink, 2.0)
-	draw_arc(a, 28, -PI * 0.5, -PI * 0.5 + TAU * clampf(body.spring_shot_time / 1.2, 0, 1), 32, ink, 2.0)
+	var ink := Placement.PixelSkin.HERO if in_range else Placement.PixelSkin.GOLD
+	Placement.line(self, a, b, ink, true)
+	Placement.target(self, b, 22, ink)
+	Placement.ellipse(self, a, Vector2.ONE * 28, ink, clampf(body.spring_shot_time / 1.2, 0, 1))
 
 
 func _draw_spring_placement() -> void:
-	if not _items.has("彈簧"):
-		return
 	var at := get_global_mouse_position()
 	if at.y < 260.0 or at.y > 590.0:
 		return
 	var spot := _prop_at("spring", clampf(at.x, STAGE_MIN, STAGE_MAX), at.y)
 	var body := _nearest_body(spot + Vector2(0, 18))
-	var aim_x := _spring_aim_x(spot, body)
-	# 只看一開始的方向：畫出旋轉後的彈簧，不畫整條拋物線與落點。
-	draw_arc(spot, 33, 0, TAU, 32, Color(0.3, 1.0, 0.88, 0.45), 1.5)
-	DuelProp.draw_spring(self, aim_x, Color(1, 1, 1, 0.82), spot)
-
-
-func _spring_aim_x(spot: Vector2, body: Duelist) -> float:
-	if body == null or body.out:
-		return 0.0
-	if body.position.distance_to(spot) > SPRING_AIM_RANGE:
-		return 0.0
-	var offset := body.position.x - spot.x
-	if absf(offset) < SPRING_UP_DEADZONE:
-		return 0.0
-	return signf(offset)
-
-
-func _spring_plan(body: Duelist, aim_x: float) -> Dictionary:
-	var plan := {
-		"hx": 0.0,
-		"hy": 600.0,
-		"gravity": 1800.0,
-		"fall": true,
-		"shot": false,
-		"toward": false,
-		"aim_x": aim_x,
-	}
-	if body == null or not _items.has("彈簧"):
-		return plan
-	var target := _other(body)
-	var gap := target.position.x - body.position.x
-	var toward := aim_x != 0.0 and (absf(gap) < 1.0 or signf(gap) == aim_x)
-	var row: Dictionary = _items["彈簧"]
-	plan["hy"] = float(row["hop_y"])
-	plan["gravity"] = float(row["gravity"])
-	plan["toward"] = toward
-	if aim_x == 0.0:
-		return plan
-	if toward:
-		plan["hx"] = float(row["big_x"]) * aim_x
-		plan["hy"] = float(row["big_y"])
-		return plan
-	var away: Dictionary = _spring_retreat_row if not _spring_retreat_row.is_empty() else row
-	plan["hx"] = float(away["hop_x"]) * aim_x
-	plan["hy"] = float(away["hop_y"])
-	plan["gravity"] = float(away["gravity"])
-	plan["fall"] = false
-	plan["shot"] = true
-	return plan
+	var dir := _retreat_direction(body, _other(body))
+	var ink := Placement.PixelSkin.HERO if _cool[1] <= 0 else Placement.PixelSkin.DANGER
+	var tip := spot + Vector2(dir * 86, -30)
+	Placement.footprint(self, spot + Vector2(0, 18), 35, ink)
+	Placement.spring(self, spot, _cool[1] <= 0)
+	Placement.arrow(self, spot, tip, ink)
 
 
 func _nearest_body(at: Vector2) -> Duelist:
@@ -225,6 +164,11 @@ func _nearest_body(at: Vector2) -> Duelist:
 			best = distance
 			nearest = body
 	return nearest
+
+
+func _retreat_direction(body: Duelist, target: Duelist) -> float:
+	var gap := body.position.x - target.position.x
+	return signf(gap) if absf(gap) > 1.0 else (-1.0 if body.face_right else 1.0)
 
 
 func _spring_can_shoot(body: Duelist, target: Duelist) -> bool:
@@ -272,8 +216,7 @@ func _process(delta: float) -> void:
 		_counter_notice_time = maxf(_counter_notice_time - delta * _pace, 0.0)
 	if _big_cd > 0.0:
 		_big_cd = maxf(_big_cd - delta, 0.0)
-	for i in _cool.size():
-		_cool[i] = maxf(_cool[i] - delta, 0.0)
+	_tick_tool_cooldowns(delta)
 	if qte:
 		_think(left, right)
 		_think(right, left)
@@ -325,18 +268,25 @@ func _process(delta: float) -> void:
 	_refresh_counter_hud()
 
 
+func _tick_tool_cooldowns(delta: float) -> void:
+	for i in _cool.size():
+		_cool[i] = maxf(_cool[i] - delta, 0.0)
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_R:
 			_restart()
 		elif event.keycode == KEY_ESCAPE:
-			get_tree().change_scene_to_file("res://scenes/levels.tscn")
+			get_tree().change_scene_to_file("res://scenes/main.tscn")
 		elif qte and event.keycode == KEY_F:
 			_press_parry()
 		elif not qte and event.keycode == KEY_1:
 			_tool = 0
 		elif not qte and event.keycode == KEY_2:
 			pick_tool(1)
+			if event.shift_pressed and not _preview:
+				_toggle_spring_mode()
 		elif not qte and event.keycode == KEY_3:
 			_tool = 2
 		elif not qte and event.keycode == KEY_H:
@@ -366,7 +316,6 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _restart() -> void:
-	_dismiss_flow()
 	_preview = false
 	_preview_id = ""
 	_show_preview(false)
@@ -408,6 +357,14 @@ func _restart() -> void:
 		_setup_spring_practice()
 
 
+func _toggle_spring_mode() -> void:
+	if _spring_practice:
+		return
+	_spring_retreat = not _spring_retreat
+	_tool = 1
+	_counter_message("後撤彈簧：拉開距離，落地開火" if _spring_retreat else "拋高彈簧：升空後使出下落攻擊")
+
+
 func _toggle_spring_practice() -> void:
 	if not _spring_practice:
 		_start_spring_practice()
@@ -426,6 +383,7 @@ func _start_spring_practice() -> void:
 		_practice_names = PackedStringArray([left.display_name, right.display_name])
 	_spring_practice = true
 	_pace = NORMAL
+	_spring_retreat = true
 	_restart()
 
 
@@ -457,6 +415,10 @@ func _tick_spring_practice() -> void:
 
 
 func _refresh_counter_hud() -> void:
+	if _spring_mode_button != null:
+		_spring_mode_button.visible = not qte and not _preview and _tool == 1
+		_spring_mode_button.disabled = _spring_practice
+		_spring_mode_button.text = "彈簧：後撤開火" if _spring_retreat else "彈簧：拋高下落"
 	if _practice_button != null:
 		_practice_button.visible = not qte and not brawl and not _preview
 		_practice_button.text = "離開練習 [P]" if _spring_practice else "彈簧開火練習 [P]"
@@ -467,7 +429,7 @@ func _refresh_counter_hud() -> void:
 	if _counter_notice_time > 0.0 or _counter_notice_time < 0.0:
 		message = _counter_notice
 	elif _spring_practice and not _practice_started:
-		message = "點我方右側的青色光圈放彈簧，往左後撤，落地自動開火。"
+		message = "點我方腳下的青色光圈放彈簧。踩到後撤，落地自動開火。"
 	else:
 		for body in _bodies():
 			if body.spring_shot == Duelist.SpringShot.ESCAPING:
@@ -478,8 +440,8 @@ func _refresh_counter_hud() -> void:
 				var distance := int(absf(body.position.x - target.position.x))
 				message = "射擊窗口  ·  距離 %d / 140–360" % distance
 				break
-		if message == "" and _tool == 1:
-			message = "2 彈簧：放在角色左/右決定往右/左，正下方往上。彈簧傾斜方向就是發射方向。"
+		if message == "" and _tool == 1 and _spring_retreat:
+			message = "2 選彈簧，點角色腳下或行進路線。青色箭頭是後撤方向。"
 	_counter_label.text = message
 
 
@@ -889,14 +851,15 @@ func _place(at: Vector2) -> void:
 		prop.radius = float(row["range"])
 		prop.position = _prop_at("stop", x, at.y)
 	elif _tool == 1 and _items.has("彈簧"):
-		var row: Dictionary = _items["彈簧"]
+		var row: Dictionary = _items["後撤彈簧"] if _spring_retreat and _items.has("後撤彈簧") else _items["彈簧"]
 		prop.kind = "spring"
-		prop.arm_delay = 0.0
+		prop.retreat = _spring_retreat
+		prop.arm_delay = float(row["startup"])
 		prop.radius = float(row["range"])
 		prop.life = 3.2
 		prop.position = _prop_at("spring", x, at.y)
 		var nearby := _nearest_body(prop.position + Vector2(0, 18))
-		prop.launch_dir = _spring_aim_x(prop.position, nearby)
+		prop.launch_dir = _retreat_direction(nearby, _other(nearby))
 	elif _items.has("香蕉"):
 		var row: Dictionary = _items["香蕉"]
 		prop.kind = "peel"
@@ -929,7 +892,7 @@ func _check_props() -> void:
 				continue
 			if absf(who.position.x - prop.position.x) > prop.radius:
 				continue
-			if prop.kind == "spring" and absf(who.position.y - (prop.position.y + 18.0)) > 28.0:
+			if prop.retreat and absf(who.position.y - (prop.position.y + 18.0)) > 28.0:
 				continue
 			if prop.kind == "peel" and _try_peel(who, prop):
 				break
@@ -972,25 +935,29 @@ func _try_spring(body: Duelist, prop: DuelProp) -> bool:
 		return false
 	if body.out or prop.is_queued_for_deletion():
 		return false
-	var target := _other(body)
-	if target == null or target.out:
-		return false
-	var plan := _spring_plan(body, float(prop.launch_dir))
-	body.face_toward(target.position.x)
-	if bool(plan["shot"]):
-		body.launch_retreat(signf(float(plan["hx"])), absf(float(plan["hx"])), float(plan["hy"]), float(plan["gravity"]))
-		body.face_toward(target.position.x)
-		_spring_fx("launch", body.position, body.position, float(plan["aim_x"]))
+	if prop.retreat and _items.has("後撤彈簧"):
+		var retreat_row: Dictionary = _items["後撤彈簧"]
+		var target := _other(body)
+		var away := _retreat_direction(body, target)
+		body.launch_retreat(away, float(retreat_row["hop_x"]), float(retreat_row["hop_y"]), float(retreat_row["gravity"]))
+		_spring_fx("launch", body.position, body.position, away)
+		prop.consume()
 		_title.text = "拉開距離"
 		if _spring_practice and body == left:
 			_practice_started = true
+		return true
+	var row: Dictionary = _items["彈簧"]
+	var fast := absf(body.vx) >= float(row["speed_min"]) or body.use_module
+	var dir := signf(body.vx) if absf(body.vx) > 20.0 else (1.0 if body.face_right else -1.0)
+	var lag := 0.12
+	if fast and _moves.has("下落"):
+		lag = float((_moves["下落"] as Dictionary)["recover"])
+	if fast:
+		body.launch_arc(dir * float(row["big_x"]), float(row["big_y"]), float(row["gravity"]), true, lag)
+		_title.text = "大拋"
 	else:
-		var lag := 0.12
-		if _moves.has("下落"):
-			lag = float((_moves["下落"] as Dictionary)["recover"])
-		body.launch_arc(float(plan["hx"]), float(plan["hy"]), float(plan["gravity"]), true, lag)
-		_spring_fx("launch", body.position, body.position, float(plan["aim_x"]))
-		_title.text = "跳高" if float(plan["aim_x"]) == 0.0 else "拉近"
+		body.launch_arc(dir * float(row["hop_x"]), float(row["hop_y"]), float(row["gravity"]), false, lag)
+		_title.text = "小跳"
 	prop.consume()
 	return true
 
@@ -1041,8 +1008,8 @@ func _resolve_spring_shot(attacker: Duelist, defender: Duelist, move: Dictionary
 	# 在槍口影格才檢查射程、朝向與高度，跳開不代表保證命中。
 	var hit := _spring_can_shoot(attacker, defender) and _facing_hit(attacker, defender, float(move["range"]))
 	var facing := 1.0 if attacker.face_right else -1.0
-	var muzzle := attacker.chest() + Vector2(facing * 54.0, -8.0)
-	var end := Vector2(defender.position.x, muzzle.y) if hit else muzzle + Vector2(facing * float(move["range"]), 0)
+	var muzzle := attacker.chest() + Vector2(facing * 54.0 * attacker.scale.x, -8.0 * attacker.scale.y)
+	var end := defender.chest() if hit else muzzle + Vector2(facing * float(move["range"]), 0)
 	_spring_fx("shot", muzzle, end, facing, hit)
 	if hit:
 		_land_hit(attacker, defender, move)
@@ -1154,7 +1121,7 @@ func _play_module(body: Duelist, other: Duelist, id: String) -> void:
 		return
 	if id == "彈簧開火":
 		body.clear_spring_shot()
-	var m: Dictionary = _moves[id]
+	var m: Dictionary = _move_for(body, id)
 	var gap := other.position.x - body.position.x
 	var dist := absf(gap)
 	var dir := signf(gap) if gap != 0.0 else (1.0 if body.face_right else -1.0)
@@ -1188,6 +1155,10 @@ func _play_module(body: Duelist, other: Duelist, id: String) -> void:
 	else:
 		body.shot_frame = -1
 	_title.text = _move_title(id)
+
+
+func _move_for(_body: Duelist, id: String) -> Dictionary:
+	return _moves[id]
 
 
 func _approach(body: Duelist, other: Duelist) -> void:
@@ -1242,8 +1213,6 @@ func _land_hit(attacker: Duelist, defender: Duelist, m: Dictionary) -> void:
 		attacker.leave_active(float(m["active"]))
 	if defender.out:
 		_title.text = "%s倒下" % defender.display_name
-		if defender == right and not left.out:
-			offer_success()
 	else:
 		_title.text = "擊倒" if pose == "down" else "打中"
 
@@ -1308,11 +1277,7 @@ func _load_sheet() -> void:
 		if str(row["id"]) == "":
 			continue
 		if str(row["kind"]) == "道具":
-			# 後撤參數是彈簧的方向變體，不算第四種道具。
-			if str(row["id"]) == "後撤彈簧":
-				_spring_retreat_row = row
-			else:
-				_items[row["id"]] = row
+			_items[row["id"]] = row
 		else:
 			_moves[row["id"]] = row
 	file.close()
@@ -1377,15 +1342,15 @@ func _press_parry() -> void:
 func _refresh_hint() -> void:
 	if _hint == null:
 		return
-	var next := "點圖標選道具，再點地面放下    Tab 拆開看    H 血量    G 地形    Esc 返回    R 重看"
+	var next := "點圖標選道具，再點地面放下    Tab 拆開看    H 血量    G 地形    Esc 回節目    R 重看"
 	if qte:
-		next = "卸甲的大招會先亮橙圈。金圈閃起時按 F 格開，太早按會落空。    Esc 返回    R 重看"
+		next = "卸甲的大招會先亮橙圈。金圈閃起時按 F 格開，太早按會落空。    Esc 回節目    R 重看"
 	elif brawl:
-		next = "讓黃髮贏。點地面放道具。H 開關血量。R 重開。Esc 返回。"
+		next = "讓黃髮贏。點地面放道具。H 開關血量。R 重開。Esc 回節目。"
 	elif _stage != null and _stage.editing:
 		next = "拖空白畫長條，拖長條可移動。點長條上的標籤或按 T，決定能不能傾斜；能傾斜才拖左右端改高低。右鍵刪。G 離開。"
 	elif _preview:
-		next = "選上面的招單獨看。Tab 回到對打。    Esc 返回"
+		next = "選上面的招單獨看。Tab 回到對打。    Esc 回節目"
 	if _hint.text != next:
 		_hint.text = next
 	if _rack == null:
@@ -1404,8 +1369,8 @@ func _build_hud() -> void:
 	var root := Control.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var font := SystemFont.new()
-	font.font_names = PackedStringArray(["Microsoft JhengHei UI", "Microsoft JhengHei", "Microsoft YaHei", "PingFang TC", "Heiti TC", "Noto Sans CJK TC"])
+	var font := preload("res://scripts/menu_ui.gd").font()
+
 	var theme := Theme.new()
 	theme.default_font = font
 	theme.default_font_size = 20
@@ -1439,7 +1404,7 @@ func _build_hud() -> void:
 	_hint = hint
 	_ground_button = Button.new()
 	_ground_button.text = "地形"
-	_ground_button.position = Vector2(PAUSE_MARGIN + PAUSE_SIZE + 12.0, 720.0 - PAUSE_MARGIN - 32.0)
+	_ground_button.position = Vector2(24, 620)
 	_ground_button.size = Vector2(88, 32)
 	_ground_button.focus_mode = Control.FOCUS_NONE
 	_ground_button.pressed.connect(func() -> void:
@@ -1472,6 +1437,13 @@ func _build_hud() -> void:
 	_build_cast(root)
 	_build_preview(root)
 	if not qte:
+		_spring_mode_button = Button.new()
+		_spring_mode_button.position = Vector2(788, 650)
+		_spring_mode_button.size = Vector2(210, 40)
+		_spring_mode_button.focus_mode = Control.FOCUS_NONE
+		_spring_mode_button.tooltip_text = "切換後撤開火／拋高下落。Shift+2 也可切換。"
+		_spring_mode_button.pressed.connect(_toggle_spring_mode)
+		root.add_child(_spring_mode_button)
 		_counter_label = Label.new()
 		_counter_label.position = Vector2(160, 174)
 		_counter_label.size = Vector2(960, 50)
@@ -1638,7 +1610,6 @@ func _build_preview(root: Control) -> void:
 	_bar_active = _phase_block(root, Color(0.42, 0.16, 0.12))
 	_bar_recover = _phase_block(root, Color(0.18, 0.24, 0.34))
 	_bar_head = _phase_block(root, Color(0.96, 0.94, 0.88))
-	_build_flow()
 
 
 func _phase_block(root: Control, ink: Color) -> ColorRect:
@@ -1710,7 +1681,7 @@ func _preview_play(id: String) -> void:
 			_park(280.0)
 			_play_module(left, right, id)
 		"下落":
-			_park(60.0)
+			_park(80.0)
 			_launch_preview()
 		"香蕉滑鏟":
 			_park(320.0)
@@ -1722,17 +1693,16 @@ func _preview_play(id: String) -> void:
 			left.go("walk", right.position.x - 10.0, 0.45)
 		"彈簧":
 			_park(220.0)
-			_drop_demo("spring", left.position.x - 24.0)
+			_drop_demo("spring", left.position.x + 70.0)
 			left.go("walk", right.position.x - 90.0, 0.45)
 		"彈簧開火":
 			_park(90.0)
 			var prop := DuelProp.new()
 			prop.kind = "spring"
-			prop.arm_delay = 0.0
-			prop.radius = float((_items["彈簧"] as Dictionary)["range"])
-			prop.life = 4.0
+			prop.retreat = true
+			prop.arm_delay = float((_items["後撤彈簧"] as Dictionary)["startup"])
 			prop.launch_dir = -1.0
-			prop.position = _prop_at("spring", left.position.x + 24.0, left.position.y)
+			prop.position = _prop_at("spring", left.position.x, left.position.y)
 			prop.time_scale = _pace
 			add_child(prop)
 			prop.add_to_group("duel_prop")
@@ -1774,8 +1744,6 @@ func _drop_demo(kind: String, x: float) -> void:
 		prop.radius = float(row["range"])
 		prop.life = 4.0
 		prop.position = _prop_at("spring", x)
-		var nearby := _nearest_body(prop.position + Vector2(0, 18))
-		prop.launch_dir = _spring_aim_x(prop.position, nearby)
 	elif _items.has("香蕉"):
 		var row: Dictionary = _items["香蕉"]
 		prop.kind = "peel"
@@ -1796,8 +1764,8 @@ func _launch_preview() -> void:
 	if _moves.has("下落"):
 		lag = float((_moves["下落"] as Dictionary)["recover"])
 	left.face_right = true
-	left.launch_arc(0.0, float(row["hop_y"]), float(row["gravity"]), true, lag)
-	_title.text = "跳高"
+	left.launch_arc(float(row["big_x"]), float(row["big_y"]), float(row["gravity"]), true, lag)
+	_title.text = "大拋"
 
 
 func _tick_preview() -> void:
@@ -1862,202 +1830,6 @@ func _paint_bar(shown: Dictionary, age: float, phase: String) -> void:
 	_bar_startup.color = Color(0.95, 0.78, 0.28) if phase == "前搖" else Color(0.45, 0.38, 0.16)
 	_bar_active.color = Color(0.92, 0.32, 0.18) if phase == "有效" else Color(0.42, 0.16, 0.12)
 	_bar_recover.color = Color(0.45, 0.62, 0.86) if phase == "後搖" else Color(0.18, 0.24, 0.34)
-
-
-func _build_flow() -> void:
-	var layer := CanvasLayer.new()
-	layer.name = "Flow"
-	layer.layer = 40
-	layer.process_mode = Node.PROCESS_MODE_ALWAYS
-	add_child(layer)
-	var root := Control.new()
-	root.name = "FlowRoot"
-	root.process_mode = Node.PROCESS_MODE_ALWAYS
-	root.set_anchors_preset(Control.PRESET_FULL_RECT)
-	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	layer.add_child(root)
-	_pause_button = IconButton.new()
-	_pause_button.shape = "pause"
-	_pause_button.name = "PauseButton"
-	_pause_button.process_mode = Node.PROCESS_MODE_ALWAYS
-	_pause_button.position = Vector2(PAUSE_MARGIN, 720.0 - PAUSE_MARGIN - PAUSE_SIZE)
-	_pause_button.size = Vector2(PAUSE_SIZE, PAUSE_SIZE)
-	_pause_button.pressed.connect(_open_pause)
-	root.add_child(_pause_button)
-	_pause_panel = _flow_panel(root, "PausePanel", "Paused")
-	var resume := _flow_button("Return to battle", 28)
-	resume.name = "PauseResume"
-	resume.pressed.connect(_return_to_battle)
-	_pause_panel.add_child(resume)
-	var pause_menu := _flow_button("Back to menu", 28)
-	pause_menu.name = "PauseMenu"
-	pause_menu.pressed.connect(_back_to_menu)
-	_pause_panel.add_child(pause_menu)
-	_place_flow_buttons(_pause_panel, [resume, pause_menu])
-	_success_panel = _flow_panel(root, "SuccessPanel", "Success")
-	_next_button = _flow_button("Next level", 28)
-	_next_button.name = "NextLevel"
-	_next_button.pressed.connect(_next_level)
-	_success_panel.add_child(_next_button)
-	var success_menu := _flow_button("Back to menu", 28)
-	success_menu.name = "SuccessMenu"
-	success_menu.pressed.connect(_back_to_menu)
-	_success_panel.add_child(success_menu)
-	var catcher := FlowCatcher.new()
-	catcher.name = "FlowCatcher"
-	catcher.host = self
-	catcher.process_mode = Node.PROCESS_MODE_ALWAYS
-	catcher.set_anchors_preset(Control.PRESET_FULL_RECT)
-	catcher.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.add_child(catcher)
-
-
-func _flow_panel(parent: Control, node_name: String, heading: String) -> Control:
-	var panel := Control.new()
-	panel.name = node_name
-	panel.visible = false
-	panel.process_mode = Node.PROCESS_MODE_ALWAYS
-	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
-	panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	parent.add_child(panel)
-	var dim := ColorRect.new()
-	dim.color = Color(0, 0, 0, 0.55)
-	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.add_child(dim)
-	var card := ColorRect.new()
-	card.color = MenuUi.FILL
-	card.position = Vector2(400, 180)
-	card.size = Vector2(480, 360)
-	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.add_child(card)
-	var title := Label.new()
-	title.text = heading
-	title.position = Vector2(400, 196)
-	title.size = Vector2(480, 72)
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	title.add_theme_font_override("font", MenuUi.font())
-	title.add_theme_font_size_override("font_size", 48)
-	title.add_theme_color_override("font_color", MenuUi.INK)
-	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.add_child(title)
-	return panel
-
-
-func _flow_button(text: String, font_size: int) -> Button:
-	var button := Button.new()
-	button.text = text
-	button.focus_mode = Control.FOCUS_NONE
-	button.process_mode = Node.PROCESS_MODE_ALWAYS
-	button.add_theme_font_override("font", MenuUi.font())
-	button.add_theme_font_size_override("font_size", font_size)
-	button.add_theme_color_override("font_color", MenuUi.INK)
-	button.add_theme_color_override("font_hover_color", MenuUi.HOVER_INK)
-	button.add_theme_color_override("font_pressed_color", MenuUi.HOVER_INK)
-	button.add_theme_stylebox_override("normal", _flow_style(MenuUi.FILL, MenuUi.INK, 8, 4))
-	button.add_theme_stylebox_override("hover", _flow_style(MenuUi.HOVER, MenuUi.HOVER_INK, 8, 4))
-	button.add_theme_stylebox_override("pressed", _flow_style(MenuUi.HOVER, MenuUi.HOVER_INK, 8, 4))
-	button.add_theme_stylebox_override("focus", _flow_style(MenuUi.FILL, MenuUi.INK, 8, 4))
-	return button
-
-
-func _flow_style(fill: Color, ink: Color, margin: int, border: int) -> StyleBoxFlat:
-	var box := StyleBoxFlat.new()
-	box.bg_color = fill
-	box.border_color = ink
-	box.set_border_width_all(border)
-	box.set_content_margin_all(margin)
-	return box
-
-
-func _place_flow_buttons(panel: Control, buttons: Array) -> void:
-	var shown: Array = []
-	for button in buttons:
-		if button.visible:
-			shown.append(button)
-	var width := 320.0
-	var height := 56.0
-	var gap := 16.0
-	var count := shown.size()
-	var stack := float(count) * height + float(maxi(count - 1, 0)) * gap
-	var y := 180.0 + 180.0 - stack * 0.5 + 36.0
-	var x := 400.0 + (480.0 - width) * 0.5
-	for button in shown:
-		button.position = Vector2(x, y)
-		button.size = Vector2(width, height)
-		y += height + gap
-
-
-func _open_pause() -> void:
-	if _success_open or _pause_panel == null or _pause_panel.visible:
-		return
-	_pause_panel.visible = true
-	_pause_button.visible = false
-	get_tree().paused = true
-
-
-func _return_to_battle() -> void:
-	if _pause_panel != null:
-		_pause_panel.visible = false
-	if _pause_button != null:
-		_pause_button.visible = true
-	get_tree().paused = false
-
-
-func _back_to_menu() -> void:
-	get_tree().paused = false
-	get_tree().change_scene_to_file("res://scenes/levels.tscn")
-
-
-func _next_level() -> void:
-	if campaign_level >= 2:
-		return
-	get_tree().paused = false
-	qte = false
-	brawl = false
-	campaign_level = 2
-	get_tree().change_scene_to_file("res://scenes/duel.tscn")
-
-
-func offer_success() -> void:
-	if _success_open or campaign_level <= 0 or _success_panel == null:
-		return
-	_success_open = true
-	if _pause_panel != null:
-		_pause_panel.visible = false
-	if _pause_button != null:
-		_pause_button.visible = false
-	_next_button.visible = campaign_level < 2
-	var menu := _success_panel.get_node("SuccessMenu")
-	_place_flow_buttons(_success_panel, [_next_button, menu])
-	_success_panel.visible = true
-	get_tree().paused = true
-
-
-func _dismiss_flow() -> void:
-	_success_open = false
-	if _pause_panel != null:
-		_pause_panel.visible = false
-	if _success_panel != null:
-		_success_panel.visible = false
-	if _pause_button != null:
-		_pause_button.visible = true
-	if is_inside_tree():
-		get_tree().paused = false
-
-
-func _flow_unhandled(event: InputEvent) -> void:
-	if not (event is InputEventKey) or not event.pressed or event.echo:
-		return
-	if event.keycode != KEY_ESCAPE:
-		return
-	if _success_open:
-		_back_to_menu()
-		get_viewport().set_input_as_handled()
-	elif _pause_panel != null and _pause_panel.visible:
-		_return_to_battle()
-		get_viewport().set_input_as_handled()
 
 
 class HpStrip extends Control:
@@ -2147,14 +1919,3 @@ class HpStrip extends Control:
 				return Color(0.90, 0.55, 0.28)
 			_:
 				return Color(0.86, 0.28, 0.24)
-
-
-class FlowCatcher extends Control:
-	var host
-
-	func _ready() -> void:
-		set_process_unhandled_input(true)
-
-	func _unhandled_input(event: InputEvent) -> void:
-		if host != null and host.has_method("_flow_unhandled"):
-			host._flow_unhandled(event)

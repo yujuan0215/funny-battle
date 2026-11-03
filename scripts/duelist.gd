@@ -95,6 +95,8 @@ var hp_max := 10
 var out := false
 var goal := false
 var show_hp := true
+# Opt-in solid arena walls; the original bridge and test arenas stay unchanged.
+var motion_bounds := Vector2(-INF, INF)
 
 enum SpringShot { NONE, ESCAPING, READY }
 var spring_shot: SpringShot = SpringShot.NONE
@@ -161,9 +163,8 @@ func glove_tips() -> Array[Vector2]:
 	# 蓄力最後一格，兩隻手套的前端。格子座標，原圖朝右。
 	var gloves: Array[Vector2] = [Vector2(50, 31), Vector2(50, 40)]
 	for glove in gloves:
-		var x := position.x + (glove.x + 0.5 - 32.0) * SCALE * facing
-		var y := position.y + (glove.y + 0.5 - 32.0) * SCALE - FOOT * SCALE
-		tips.append(Vector2(x, y))
+		var local_tip := Vector2((glove.x + 0.5 - 32.0) * SCALE * facing, (glove.y + 0.5 - 32.0) * SCALE - FOOT * SCALE)
+		tips.append(to_global(local_tip))
 	return tips
 
 
@@ -354,7 +355,7 @@ func _move(anim_name: String, target_x: float, move_time: float) -> void:
 	play(anim_name)
 	_sprite.flip_h = not face_right
 	_from = position.x
-	_to = target_x
+	_to = clampf(target_x, motion_bounds.x, motion_bounds.y)
 	_slide = 0.0
 	_slide_dur = maxf(move_time, 0.04)
 
@@ -390,7 +391,7 @@ func _sample_ground() -> void:
 
 
 func chest() -> Vector2:
-	return global_position + Vector2(0, -78)
+	return to_global(Vector2(0, -78))
 
 
 func face_toward(target_x: float) -> void:
@@ -487,7 +488,7 @@ func _fly(delta: float) -> void:
 	var before := position.x
 	vy += grav * delta
 	position.y += vy * delta
-	position.x = clampf(position.x + air_vx * delta, 80.0, 1200.0)
+	position.x = clampf(position.x + air_vx * delta, maxf(80.0, motion_bounds.x), minf(1200.0, motion_bounds.y))
 	vx = (position.x - before) / maxf(delta, 0.001)
 	_prev_x = position.x
 	# 大拋上升播被拋起的翻滾，過了最高點才換成下落。

@@ -2,11 +2,13 @@ class_name BananaItem
 extends StageItem
 
 const SLIP_SPEED := 230.0
+const PEEL := preload("res://assets/props/banana.png")
 
 var _whiffed: Dictionary = {}
 
 
 func _ready() -> void:
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	hover_height = 10.0
 	super()
 
@@ -53,9 +55,4 @@ func _tell(fighter: Fighter, style: String, detail: String) -> void:
 
 
 func _draw() -> void:
-	var peel := PackedVector2Array([
-		Vector2(-22, 2), Vector2(20, -6), Vector2(16, 8), Vector2(-18, 12)
-	])
-	draw_colored_polygon(peel, Color(0.98, 0.84, 0.12))
-	draw_polyline(PackedVector2Array([peel[0], peel[1], peel[2], peel[3], peel[0]]), Color(0.08, 0.08, 0.08), 3.0, true)
-	draw_line(Vector2(18, -4), Vector2(26, -12), Color(0.35, 0.22, 0.08), 3.0)
+	draw_texture_rect(PEEL, Rect2(Vector2(-32, -34), Vector2(64, 48)), false)

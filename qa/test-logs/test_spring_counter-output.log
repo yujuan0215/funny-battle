@@ -1,0 +1,28 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+ERROR: Condition "ret != noErr" is true. Returning: ""
+   at: get_system_ca_certificates (platform/macos/os_macos.mm:1035)
+PASS: 練習等待玩家實際放置道具
+PASS: 放置採用點擊事件座標，不受稍後游標移動影響
+PASS: 後撤向左，身體仍面向右方敵人
+PASS: 彈射過程不會提前造成射擊傷害
+PASS: 實際落地與動畫影格觸發一次命中
+PASS: 命中僅扣 CSV 中的兩點傷害
+PASS: 不需要先時停任何角色
+PASS: 後撤產生了實際位移
+PASS: 同一次後撤不能無限開火
+PASS: R 重來清除機會並恢復練習
+PASS: 離開練習恢復原本速度和名稱
+PASS: 普通對峙不會無條件獲得後撤射擊
+PASS: 原本的時停開火規則仍可使用
+PASS: 正常對打中也能後撤命中，不依賴練習模式
+PASS: 鏡像位置向右後撤，仍面向左方敵人
+PASS: 鏡像方向也能落地命中
+PASS: 受擊打斷後撤機會，不補發射擊
+PASS: 牆邊無法實際後撤時，不憑空獲得開火
+PASS: 不同高度的彈簧不會隔空觸發
+PASS: 瞄準前搖尚未扣血
+PASS: 開火前離開射程會打空，不保證命中
+PASS: 拋高模式保留原本大拋／下落攻擊
+PASS: 慢速拆解示範使用相同的實際觸發和射擊規則
+Spring counter tests: 0 failure(s)

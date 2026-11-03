@@ -1,0 +1,30 @@
+{
+  "asset": "res://assets/props/spring.png",
+  "date": "2026-11-03",
+  "tool": "built-in image_gen.imagegen",
+  "kind": "Generated original wood/brass/steel spring pad; engine-normalized pixel sprite",
+  "source": "sources/spring-draft.png",
+  "dimensions": [
+    24,
+    28
+  ],
+  "palette": [
+    "#241c27",
+    "#69483f",
+    "#493334",
+    "#ab7950",
+    "#dfb269",
+    "#ffe5ae",
+    "#607e86",
+    "#9ac4c5"
+  ],
+  "alpha": "binary; fully transparent exterior",
+  "filter": "nearest; no mipmaps",
+  "display": {
+    "hud": "1×",
+    "world": "2×; 48×56; upright without raster rotation"
+  },
+  "normalization": "tools/prepare_prop_art.gd: alpha cutoff, crop, nearest-neighbor resize to 22×24, eight-color quantization, 24×28 transparent canvas",
+  "collision": "Existing gameplay collision, launch direction and trigger radius unchanged",
+  "prompt": "Use case: stylized-concept. Asset type: one transparent production pixel-art sprite of a spring launch pad for a retro side-view fantasy fighting game. Primary request: design a squat sturdy upright spring trap that belongs beside a warm golden banana-peel sprite in a dark forest/clockwork arena. Subject: a horizontal wood-and-copper top plate, a compressed metallic coil with three zigzag turns, and a wide wooden base reinforced with brass corners. Palette: very dark plum outline #241c27, wood brown #69483f and #493334, brass #ab7950, golden trim #dfb269, cream highlight #ffe5ae, desaturated blue-gray steel #607e86 and pale blue-gray #9ac4c5. Old handcrafted fantasy machinery, no neon or orange plastic. Authentic low-resolution pixel art, native design 24x24 pixels enlarged with nearest neighbor. Thick one-native-pixel contour, chunky solid-color clusters, crisp square staircase edges. Coil has clear open transparent gaps; legible as a spring at 48x48 in-game. Front/side orthographic view, top plank slight visible top surface, upright unrotated, entire isolated object visible and centered, fills 80 percent width and height. Actual transparent background, no floor, no shadow beyond sprite, no glow, no arrows, no motion trails, no text, no labels, no extra objects. No gradients, anti-alias, smooth vector curves or subpixel details."
+}

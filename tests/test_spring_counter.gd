@@ -43,25 +43,19 @@ func dispose(game: Node) -> void:
 	await process_frame
 
 
-func click_at(game: Node2D, at: Vector2) -> void:
-	var click := InputEventMouseButton.new()
-	click.button_index = MOUSE_BUTTON_LEFT
-	click.pressed = true
-	click.position = game.get_global_transform_with_canvas() * at
-	game._unhandled_input(click)
-
-
 func _run() -> void:
 	var game := make_game()
 	var hero: Duelist = game.left
 	var enemy: Duelist = game.right
 	await frames(30)
 	check(shots.is_empty() and is_equal_approx(hero.position.x, 600.0), "練習等待玩家實際放置道具")
-	# 彈簧放在我方右側 → 往左後撤。
-	click_at(game, hero.position + Vector2(24, 0))
+	var click := InputEventMouseButton.new()
+	click.button_index = MOUSE_BUTTON_LEFT
+	click.pressed = true
+	click.position = game.get_global_transform_with_canvas() * hero.position
+	game._unhandled_input(click)
 	var placed := get_nodes_in_group("duel_prop")
-	check(placed.size() == 1 and is_equal_approx(placed[0].position.x, hero.position.x + 24.0), "放置採用點擊事件座標，不受稍後游標移動影響")
-	check(is_equal_approx(float(placed[0].launch_dir), -1.0), "放在右側，方向設定為往左")
+	check(placed.size() == 1 and is_equal_approx(placed[0].position.x, hero.position.x), "放置採用點擊事件座標，不受稍後游標移動影響")
 	await frames(20)
 	check(hero.airborne and hero.position.x < 600.0 and hero.face_right, "後撤向左，身體仍面向右方敵人")
 	check(enemy.hp == enemy.hp_max, "彈射過程不會提前造成射擊傷害")
@@ -83,35 +77,6 @@ func _run() -> void:
 	check(game._pick(hero, enemy) == "遠距離普攻", "原本的時停開火規則仍可使用")
 	await dispose(game)
 
-	# 放置偏移的三方向判定。
-	game = make_game()
-	game.set_process(false)
-	hero = game.left
-	enemy = game.right
-	var spot := Vector2(hero.position.x + 24.0, hero.position.y - 18.0)
-	check(is_equal_approx(game._spring_aim_x(spot, hero), -1.0), "彈簧在角色右側 → 往左彈")
-	spot = Vector2(hero.position.x - 24.0, hero.position.y - 18.0)
-	check(is_equal_approx(game._spring_aim_x(spot, hero), 1.0), "彈簧在角色左側 → 往右彈")
-	spot = Vector2(hero.position.x + 8.0, hero.position.y - 18.0)
-	check(is_equal_approx(game._spring_aim_x(spot, hero), 0.0), "正下方死區 → 往上彈")
-	spot = Vector2(hero.position.x + 200.0, hero.position.y - 18.0)
-	check(is_equal_approx(game._spring_aim_x(spot, hero), 0.0), "超出自動瞄準範圍 → 往上彈")
-	var plan: Dictionary = game._spring_plan(hero, 0.0)
-	check(bool(plan["fall"]) and not bool(plan["shot"]) and is_zero_approx(float(plan["hx"])), "往上：跳高，不開火")
-	plan = game._spring_plan(hero, -1.0)
-	check(bool(plan["shot"]) and not bool(plan["fall"]) and float(plan["hx"]) < 0.0 and is_equal_approx(float(plan["hy"]), 560.0), "往敵人反方向：後撤開火")
-	plan = game._spring_plan(hero, 1.0)
-	check(not bool(plan["shot"]) and bool(plan["fall"]) and float(plan["hx"]) > 0.0 and is_equal_approx(float(plan["hy"]), 600.0), "往敵人方向：拉近跳高")
-	# 直接在角色正下方放一顆，實際觸發應是垂直跳高而不是後撤。
-	var up := DuelProp.new()
-	up.kind = "spring"
-	up.launch_dir = 0.0
-	game.add_child(up)
-	game._try_spring(hero, up)
-	check(hero.airborne and hero.big_launch and is_zero_approx(hero.air_vx) and hero.spring_shot == Duelist.SpringShot.NONE, "正下方彈簧垂直跳高，不進入開火狀態")
-	up.free()
-	await dispose(game)
-
 	game = make_game()
 	game._toggle_spring_practice()
 	game._pace = 1.0
@@ -119,7 +84,7 @@ func _run() -> void:
 	hero = game.left
 	enemy = game.right
 	game._tool = 1
-	game._place(hero.position + Vector2(24, 0))
+	game._place(hero.position)
 	await frames(180)
 	check(shots.size() == 1 and bool(shots[0]["hit"]) and shots[0]["shooter"] == hero, "正常對打中也能後撤命中，不依賴練習模式")
 	await dispose(game)
@@ -133,7 +98,7 @@ func _run() -> void:
 	enemy.face_right = true
 	game._stand(hero)
 	game._stand(enemy)
-	game._place(hero.position + Vector2(-24, 0))
+	game._place(hero.position)
 	await frames(20)
 	check(hero.airborne and hero.position.x > 700.0 and not hero.face_right, "鏡像位置向右後撤，仍面向左方敵人")
 	await frames(160)
@@ -142,7 +107,7 @@ func _run() -> void:
 
 	game = make_game()
 	hero = game.left
-	game._place(hero.position + Vector2(24, 0))
+	game._place(hero.position)
 	await frames(20)
 	hero.react("hit", hero.position.x, 0.0, 0.0, true, 0.2)
 	await frames(180)
@@ -156,14 +121,14 @@ func _run() -> void:
 	enemy.position.x = 170.0
 	game._stand(hero)
 	game._stand(enemy)
-	game._place(hero.position + Vector2(24, 0))
+	game._place(hero.position)
 	await frames(200)
 	check(shots.is_empty() and hero.spring_shot == Duelist.SpringShot.NONE, "牆邊無法實際後撤時，不憑空獲得開火")
 	await dispose(game)
 
 	game = make_game()
 	hero = game.left
-	game._place(hero.position + Vector2(24, 0))
+	game._place(hero.position)
 	var props := get_nodes_in_group("duel_prop")
 	props[0].position.y -= 120.0
 	await frames(60)
@@ -173,7 +138,7 @@ func _run() -> void:
 	game = make_game()
 	hero = game.left
 	enemy = game.right
-	game._place(hero.position + Vector2(24, 0))
+	game._place(hero.position)
 	var aiming := false
 	for i in 200:
 		await process_frame
@@ -195,11 +160,11 @@ func _run() -> void:
 	game._park(220.0)
 	var spring := DuelProp.new()
 	spring.kind = "spring"
-	spring.launch_dir = 0.0
+	spring.retreat = false
 	game.add_child(spring)
 	hero.vx = 200.0
 	game._try_spring(hero, spring)
-	check(hero.airborne and hero.big_launch and hero.spring_shot == Duelist.SpringShot.NONE, "往上彈簧保留原本大拋／下落攻擊")
+	check(hero.airborne and hero.big_launch and hero.spring_shot == Duelist.SpringShot.NONE, "拋高模式保留原本大拋／下落攻擊")
 	await dispose(game)
 
 	game = make_game()

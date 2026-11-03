@@ -1,0 +1,9 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+ERROR: Condition "ret != noErr" is true. Returning: ""
+   at: get_system_ca_certificates (platform/macos/os_macos.mm:1035)
+RAW_CSV=true
+CHAPTER 1 ITEMS=["香蕉", "彈簧", "後撤彈簧", "時停"]
+CHAPTER 2 ITEMS=["香蕉", "彈簧", "後撤彈簧", "時停"]
+CHAPTER 3 ITEMS=["香蕉", "彈簧", "後撤彈簧", "時停"]
+Export prop test: 16 checks, 0 failures

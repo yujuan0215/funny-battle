@@ -10,16 +10,18 @@ config_version=5
 
 [application]
 
-config/name="主持人切台"
-config/description="兩隻個性不同的機器人互打，玩家當主持人完成節目單。"
+config/name="FUNNY BATTLE · 小小反擊"
+config/description="觀察敵人起手，用場地與道具幫弱小主角借力反擊。"
 run/main_scene="res://scenes/start.tscn"
-config/features=PackedStringArray("4.7", "Forward Plus")
+config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
 
 [display]
 
 window/size/viewport_width=1280
 window/size/viewport_height=720
+window/size/window_width_override=1600
+window/size/window_height_override=900
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
@@ -31,6 +33,9 @@ window/stretch/aspect="expand"
 2d_physics/layer_4="items"
 
 [rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
 
 textures/canvas_textures/default_texture_filter=0
 environment/defaults/default_clear_color=Color(1, 1, 1, 1)

@@ -1,0 +1,6 @@
+[gd_scene load_steps=3 format=3]
+[ext_resource type="PackedScene" path="res://scenes/duel.tscn" id="1"]
+[ext_resource type="Script" path="res://scripts/action_trial.gd" id="2"]
+[node name="ActionTrial2" instance=ExtResource("1")]
+script = ExtResource("2")
+trial_id = 2

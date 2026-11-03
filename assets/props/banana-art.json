@@ -1,0 +1,28 @@
+{
+  "asset": "res://assets/props/banana.png",
+  "date": "2026-11-03",
+  "tool": "built-in image_gen.imagegen",
+  "kind": "Generated original banana peel; engine-normalized pixel sprite",
+  "source": "sources/banana-peel-draft.png",
+  "dimensions": [
+    32,
+    24
+  ],
+  "palette": [
+    "#241c27",
+    "#69483f",
+    "#ac702b",
+    "#e8ad36",
+    "#f5cd5b",
+    "#ffe5ae"
+  ],
+  "alpha": "binary; fully transparent exterior",
+  "filter": "nearest; no mipmaps",
+  "display": {
+    "hud": "1×",
+    "world": "2×; 64×48"
+  },
+  "normalization": "tools/prepare_prop_art.gd: alpha cutoff, crop, nearest-neighbor resize to 32×20, six-color quantization, 32×24 transparent canvas",
+  "collision": "Existing gameplay collision and trigger radius unchanged",
+  "prompt": "Use case: stylized-concept. Asset type: a single production sprite for a retro pixel-art side-view game. Primary request: redesign an unmistakable EMPTY BANANA PEEL lying on the ground as a slip trap. Three flaps splayed from a small central upright curled stem: left and right flaps rest on the floor and a shorter front flap folds toward viewer. Wide low triangular silhouette, clearly a discarded peel, not a whole banana or crescent. Style: authentic hand-placed 32x24 pixel sprite, enlarged with nearest-neighbor to a 1024x768 canvas; every design pixel is a hard square, no anti-alias, no smooth vector curves, no gradients, no tiny details. Dark plum-brown one-design-pixel outline #241c27, rich golden yellow #e8ad36, warm yellow #f5cd5b, pale cream #ffe5ae for inner peel, ochre shadow #ac702b and small brown stem #69483f. Chunky clean clusters, light from upper left, readable at 48 pixels wide against a dark forest or wooden floor. Orthographic side view with slight three-quarter overlap of peel flaps. One isolated object centered, occupies about 80 percent of image width and 70 percent of height, all flap ends fully visible. Actual transparent background, no floor, no cast shadow outside silhouette, no checkerboard, no text, no border, no glow, no face, no other objects. This is a raster game sprite, keep the visibly square pixel staircase edges."
+}

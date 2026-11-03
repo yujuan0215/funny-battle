@@ -375,8 +375,8 @@ func _build_hud() -> void:
 	var root := Control.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var font := SystemFont.new()
-	font.font_names = PackedStringArray(["Microsoft JhengHei UI", "Microsoft JhengHei", "Microsoft YaHei", "PingFang TC", "Heiti TC", "Noto Sans CJK TC"])
+	var font := preload("res://scripts/menu_ui.gd").font()
+
 	var theme := Theme.new()
 	theme.default_font = font
 	theme.default_font_size = 20
@@ -540,7 +540,6 @@ func _build_hud() -> void:
 		var duel := preload("res://scripts/duel.gd")
 		duel.qte = false
 		duel.brawl = false
-		duel.campaign_level = 0
 		get_tree().change_scene_to_file("res://scenes/duel.tscn")
 	)
 	_paint_button(watch, false, true)
@@ -555,7 +554,6 @@ func _build_hud() -> void:
 		var duel := preload("res://scripts/duel.gd")
 		duel.qte = true
 		duel.brawl = false
-		duel.campaign_level = 0
 		get_tree().change_scene_to_file("res://scenes/duel.tscn")
 	)
 	_paint_button(flash, false, true)
@@ -571,7 +569,6 @@ func _build_hud() -> void:
 		duel.qte = false
 		duel.brawl = true
 		duel.brawl_count = 4
-		duel.campaign_level = 0
 		get_tree().change_scene_to_file("res://scenes/duel.tscn")
 	)
 	_paint_button(melee, false, true)
@@ -583,8 +580,6 @@ func _build_hud() -> void:
 	spikes.size = Vector2(220, 48)
 	spikes.focus_mode = Control.FOCUS_NONE
 	spikes.pressed.connect(func() -> void:
-		var duel := preload("res://scripts/duel.gd")
-		duel.campaign_level = 0
 		get_tree().change_scene_to_file("res://scenes/spikes.tscn")
 	)
 	_paint_button(spikes, false, true)

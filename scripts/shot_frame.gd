@@ -1,13 +1,13 @@
 class_name ShotFrame
 extends Node2D
 
-var _font: SystemFont
+var _font: Font
 
 
 func _ready() -> void:
 	z_index = 3
-	_font = SystemFont.new()
-	_font.font_names = PackedStringArray(["Microsoft JhengHei UI", "Microsoft JhengHei", "Microsoft YaHei", "PingFang TC", "Heiti TC", "Noto Sans CJK TC"])
+	_font = preload("res://scripts/menu_ui.gd").font()
+
 
 
 func _process(_delta: float) -> void:

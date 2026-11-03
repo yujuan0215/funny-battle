@@ -1,6 +1,6 @@
 extends Node2D
 
-const DuelProp := preload("res://upstream/level_two/prop.gd")
+const LabProp := preload("res://upstream/level_two/prop.gd")
 
 signal spring_counter_fired(shooter: Duelist, target: Duelist, hit: bool)
 
@@ -168,7 +168,7 @@ func _draw_spring_placement() -> void:
 	var aim_x := _spring_aim_x(spot, body)
 	# 只看一開始的方向：畫出旋轉後的彈簧，不畫整條拋物線與落點。
 	draw_arc(spot, 33, 0, TAU, 32, Color(0.3, 1.0, 0.88, 0.45), 1.5)
-	DuelProp.draw_spring(self, aim_x, Color(1, 1, 1, 0.82), spot)
+	LabProp.draw_spring(self, aim_x, Color(1, 1, 1, 0.82), spot)
 
 
 func _spring_aim_x(spot: Vector2, body: Duelist) -> float:
@@ -883,7 +883,7 @@ func _place(at: Vector2) -> void:
 	if get_tree().get_nodes_in_group("duel_prop").size() >= 4:
 		return
 	var x := clampf(at.x, STAGE_MIN, STAGE_MAX)
-	var prop := DuelProp.new()
+	var prop := LabProp.new()
 	if _tool == 2 and _items.has("時停"):
 		var row: Dictionary = _items["時停"]
 		prop.kind = "stop"
@@ -916,7 +916,7 @@ func _place(at: Vector2) -> void:
 
 func _check_props() -> void:
 	for node in get_tree().get_nodes_in_group("duel_prop"):
-		var prop := node as DuelProp
+		var prop := node as LabProp
 		if prop == null:
 			continue
 		if prop.kind == "stop":
@@ -939,7 +939,7 @@ func _check_props() -> void:
 				break
 
 
-func _try_peel(body: Duelist, prop: DuelProp) -> bool:
+func _try_peel(body: Duelist, prop: LabProp) -> bool:
 	if not _items.has("香蕉") or body.slipping:
 		return false
 	var row: Dictionary = _items["香蕉"]
@@ -969,7 +969,7 @@ func _try_peel(body: Duelist, prop: DuelProp) -> bool:
 	return true
 
 
-func _try_spring(body: Duelist, prop: DuelProp) -> bool:
+func _try_spring(body: Duelist, prop: LabProp) -> bool:
 	if not _items.has("彈簧"):
 		return false
 	if body.out or prop.is_queued_for_deletion():
@@ -997,7 +997,7 @@ func _try_spring(body: Duelist, prop: DuelProp) -> bool:
 	return true
 
 
-func _resolve_stop(prop: DuelProp) -> void:
+func _resolve_stop(prop: LabProp) -> void:
 	prop.spent = true
 	if not _items.has("時停"):
 		prop.queue_free()
@@ -1537,7 +1537,7 @@ func _apply_pace() -> void:
 	for body in _bodies():
 		body.time_scale = _pace
 	for node in get_tree().get_nodes_in_group("duel_prop"):
-		var prop := node as DuelProp
+		var prop := node as LabProp
 		if prop != null:
 			prop.time_scale = _pace
 	if _pace_button != null:
@@ -1728,7 +1728,7 @@ func _preview_play(id: String) -> void:
 			left.go("walk", right.position.x - 90.0, 0.45)
 		"彈簧開火":
 			_park(90.0)
-			var prop := DuelProp.new()
+			var prop := LabProp.new()
 			prop.kind = "spring"
 			prop.arm_delay = 0.0
 			prop.radius = float((_items["彈簧"] as Dictionary)["range"])
@@ -1762,7 +1762,7 @@ func _park(dist: float) -> void:
 
 
 func _drop_demo(kind: String, x: float) -> void:
-	var prop := DuelProp.new()
+	var prop := LabProp.new()
 	prop.time_scale = _pace
 	if kind == "stop" and _items.has("時停"):
 		var row: Dictionary = _items["時停"]

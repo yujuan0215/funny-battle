@@ -57,7 +57,7 @@ func _ready() -> void:
 	remove_child(_stage)
 	_stage.queue_free()
 	_stage = SPIKE_STAGE.new()
-	_stage.chapter_theme = ("forest_arena" if chapter_number == 1 else str(Campaign.chapter(chapter_number)["theme"])) if beginner else "test"
+	_stage.chapter_theme = ("test" if chapter_number == 1 else str(Campaign.chapter(chapter_number)["theme"])) if beginner else "test"
 	add_child(_stage)
 	_boss_move = (_moves["普通1"] as Dictionary).duplicate()
 	_boss_move.merge({

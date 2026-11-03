@@ -15,8 +15,7 @@ func _ready() -> void:
 	brawl = false
 	campaign_level = 2
 	super._ready()
-	_pace = 1.0
-	_apply_pace()
+	# 預設速度沿用 main 的第二關（慢速 0.3，按鈕可切換原速）。
 	for layer in get_children():
 		if not layer is CanvasLayer:
 			continue

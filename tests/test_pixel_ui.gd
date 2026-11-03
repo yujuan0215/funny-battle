@@ -35,7 +35,7 @@ func mount(path: String) -> Node:
 
 func _run() -> void:
 	var font := MenuUi.font()
-	var glyphs := "小小反擊木棧前哨風車峽谷鐘樓工坊冰封貨港熔爐車站王座機關塔香蕉彈簧時停暫停勝利失敗借力反擊選關繼續開始重試安全繩0123456789BOSS×"
+	var glyphs := "小小反擊尖刺世界風車峽谷鐘樓工坊冰封貨港熔爐車站王座機關塔香蕉彈簧時停暫停勝利失敗借力反擊選關繼續開始重試安全繩0123456789BOSS×"
 	var missing := ""
 	for character in glyphs:
 		if not font.has_char(character.unicode_at(0)):

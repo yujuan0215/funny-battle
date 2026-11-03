@@ -121,9 +121,27 @@ func _run() -> void:
 		intro.free()
 
 	var second = scene("res://scenes/level_two.tscn")
-	check(second.campaign_level == 2 and second._pace == 1.0, "Remote duel is a real playable second level at normal speed")
+	check(second.campaign_level == 2 and second._pace == second.SLOW, "Remote duel starts at main's slow default like the original second level")
 	check(is_instance_valid(second._pause_button) and second._pause_button.shape == "pause", "Second level retains the upstream pause UI")
 	check(second._items.size() == 3 and not second._spring_retreat_row.is_empty(), "Second level loads the upstream item rules rather than the old local spring toggle")
+	# Placed props must be recognised by the upstream rules (a global DuelProp class once shadowed the alias and made them inert).
+	for tool in [0, 1]:
+		var lab = scene("res://scenes/level_two.tscn")
+		lab._tool = tool
+		lab._place(Vector2(lab.left.position.x + (40.0 if tool == 0 else 0.0), lab.left.position.y))
+		var reacted := false
+		for i in 200:
+			lab._process(1.0 / 60.0)
+			lab.left._process(1.0 / 60.0)
+			lab.right._process(1.0 / 60.0)
+			for lab_prop in get_nodes_in_group("duel_prop"):
+				if not lab_prop.is_queued_for_deletion():
+					lab_prop._process(1.0 / 60.0)
+			reacted = reacted or lab._title.text in ["滑鏟", "跳高"]
+		check(reacted, "Level two banana slides and spring launches the fighter standing on it" + (" (banana)" if tool == 0 else " (spring)"))
+		for lab_prop in get_nodes_in_group("duel_prop"):
+			lab_prop.free()
+		lab.free()
 	check(second._spring_plan(second.left, -1)["shot"] and second._spring_plan(second.left, 1)["toward"], "Upstream spring direction plans survive the port")
 	second._open_pause()
 	check(paused and second._pause_panel.visible, "Upstream pause actually freezes the tree")

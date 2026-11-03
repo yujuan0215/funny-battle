@@ -827,6 +827,20 @@ func _input(event: InputEvent) -> void:
 	# Handle it before GUI confirm so the button cannot swallow slow motion.
 	if event is InputEventKey and event.keycode == KEY_SPACE:
 		_unhandled_input(event)
+	elif _is_field_click(event):
+		# Place before GUI routing: a lost mouse-release (tab switch, fullscreen, leaving the
+		# embed) leaves a button holding mouse focus and would swallow every later click.
+		_place(make_input_local(event).position)
+		get_viewport().set_input_as_handled()
+
+
+func _is_field_click(event: InputEvent) -> bool:
+	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
+		return false
+	if _round_state != RoundState.PLAYING or qte or _preview or _stage.editing:
+		return false
+	var hovered := get_viewport().gui_get_hovered_control()
+	return hovered == null or hovered.mouse_filter != Control.MOUSE_FILTER_STOP
 
 
 func _unhandled_input(event: InputEvent) -> void:

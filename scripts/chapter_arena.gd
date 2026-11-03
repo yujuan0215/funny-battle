@@ -12,6 +12,7 @@ var magnet_x := -1.0
 var magnet_left := 0.0
 var crate_ready := true
 var slam_left := 0.0
+var slam_impact_left := 0.0
 var slam_x := 600.0
 var slam_duration := 2.2
 var _slam_hit := false
@@ -52,6 +53,7 @@ func _reset_fighters() -> void:
 	crate_x = 920
 	crate_ready = true
 	slam_left = 0
+	slam_impact_left = 0
 	_slam_hit = false
 	_mechanic_hits = 0
 	_last_wind = 0
@@ -94,6 +96,7 @@ func _process(delta: float) -> void:
 	if _round_state != RoundState.PLAYING or _ended:
 		return
 	var dt := delta * _pace
+	slam_impact_left = maxf(0, slam_impact_left - dt)
 	world_time += dt
 	wind = 1.0 if int(world_time / 6.0) % 2 == 0 else -1.0
 	if chapter_number == 2 and _last_wind != int(wind):
@@ -170,6 +173,7 @@ func _begin_slam() -> void:
 func _resolve_slam() -> void:
 	if right.out or _ended:
 		return
+	slam_impact_left = .24
 	_slam_hit = true
 	_shake = 8
 	_audio.cue("hit")
@@ -180,8 +184,10 @@ func _resolve_slam() -> void:
 		_counter_hits += 1
 		_audio.cue("counter")
 	else:
+		var health_before := left.hp
 		_land_hit(right, left, _boss_move)
-		_hud.tell("受擊", 1, ["miss"], true)
+		_last_hero_hit = "重錘"
+		_hud.tell("重錘 −%d HP" % (health_before - left.hp), 1.4, ["miss"], true)
 	if phase != previous_phase or _ended:
 		return
 	_boss_state = "recover"

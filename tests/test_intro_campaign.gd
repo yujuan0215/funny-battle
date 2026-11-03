@@ -124,6 +124,31 @@ func _run() -> void:
 	check(second.campaign_level == 2 and second._pace == second.SLOW, "Remote duel starts at main's slow default like the original second level")
 	check(is_instance_valid(second._pause_button) and second._pause_button.shape == "pause", "Second level retains the upstream pause UI")
 	check(second._items.size() == 3 and not second._spring_retreat_row.is_empty(), "Second level loads the upstream item rules rather than the old local spring toggle")
+	var cap = scene("res://scenes/level_two.tscn")
+	cap._tool = 0
+	for n in 4:
+		for k in cap._cool.size():
+			cap._cool[k] = 0.0
+		cap._place(Vector2(200.0 + n * 90.0, 548.0))
+	check(get_nodes_in_group("duel_prop").size() == 4, "Level two accepts four props")
+	cap._place(Vector2(900.0, 548.0))
+	check(cap._counter_notice.contains("冷卻"), "Blocked placement during cooldown explains itself")
+	for k in cap._cool.size():
+		cap._cool[k] = 0.0
+	cap._place(Vector2(900.0, 548.0))
+	check(get_nodes_in_group("duel_prop").size() == 4 and cap._counter_notice.contains("已滿"), "A full field explains itself instead of ignoring the click")
+	get_nodes_in_group("duel_prop")[0].armed = false
+	for k in cap._cool.size():
+		cap._cool[k] = 0.0
+	cap._place(Vector2(900.0, 548.0))
+	var fresh := 0
+	for cap_prop in get_nodes_in_group("duel_prop"):
+		if not cap_prop.is_queued_for_deletion() and cap_prop.position.x == 900.0:
+			fresh += 1
+	check(fresh == 1, "A used-up banana no longer blocks the next placement")
+	for cap_prop in get_nodes_in_group("duel_prop"):
+		cap_prop.free()
+	cap.free()
 	# Placed props must be recognised by the upstream rules (a global DuelProp class once shadowed the alias and made them inert).
 	for tool in [0, 1]:
 		var lab = scene("res://scenes/level_two.tscn")

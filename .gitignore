@@ -8,3 +8,4 @@ tmp/
 
 # Isolated automated-play save files
 .test-data/
+build/

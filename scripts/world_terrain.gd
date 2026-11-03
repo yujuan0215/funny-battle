@@ -1,6 +1,7 @@
 extends Node2D
 ## Authored, collidable landforms. Every visible walkable edge is sampled here.
 const Backdrop := preload("res://scripts/pixel_backdrop.gd")
+const MechanismArt := preload("res://scripts/arena_mechanism_art.gd")
 const Icons := preload("res://scripts/arena_icons.gd")
 var arena: Node2D
 var chapter := 3
@@ -91,6 +92,9 @@ func _draw() -> void:
 		var active: bool=is_instance_valid(arena) and arena.route_checkpoint.x>=point.x
 		_lantern(point+Vector2(38,-66),p[2] if active else Color(p[2],.45))
 		Icons.paint(self,"right",point+Vector2(80,-48),24,Color(p[2],.8))
+	for side in [-1, 1]:
+		var edge := 380.0 if side < 0 else 1030.0
+		MechanismArt.barrier(self, edge, base_height(edge), side, p[0], p[2])
 	_draw_mechanisms(p)
 func _draw_land(s: Dictionary,p: Array) -> void:
 	var edge: PackedVector2Array=s["points"]
@@ -232,11 +236,7 @@ func _draw_mechanisms(p: Array) -> void:
 			Icons.paint(self,"magnet",Vector2(arena.magnet_x,support_at(arena.magnet_x,420)-28),30,p[2])
 	for bag in arena.sandbags:
 		Icons.paint(self,"sandbag",Vector2(bag["x"],bag.get("y",base_height(bag["x"]))-24),38,p[2])
-	if arena.slam_left>0:
-		var y: float=arena.slam_floor
-		var ink:=Color("ed7758")
-		draw_rect(Rect2(arena.slam_x-64,y-7,128,14),Color(ink,.35))
-		draw_dashed_line(Vector2(arena.slam_x,y-190),Vector2(arena.slam_x,y),ink,3,10)
+	MechanismArt.slam(self, arena.slam_x, arena.slam_floor, arena.slam_left, arena.slam_duration, arena.slam_impact_left)
 
 func _build_materials() -> void:
 	# Original pixel tiles, made once per scene, reused by every landform mesh.

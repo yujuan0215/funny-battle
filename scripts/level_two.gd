@@ -51,6 +51,23 @@ func _restart() -> void:
 	super._restart()
 
 
+func _place(at: Vector2) -> void:
+	# 上游會靜默拒絕放置；這裡先說明原因，並清掉已用掉、只剩淡出的香蕉，避免慢速下佔滿道具上限。
+	var names := ["香蕉", "彈簧", "時停"]
+	if _tool >= 0 and _tool < _cool.size() and _cool[_tool] > 0.0:
+		_counter_message("%s冷卻中 %.1f 秒" % [names[_tool], _cool[_tool]], 0.6)
+		return
+	if get_tree().get_nodes_in_group("duel_prop").size() >= 4:
+		for node in get_tree().get_nodes_in_group("duel_prop"):
+			if node.kind == "peel" and not node.armed:
+				node.remove_from_group("duel_prop")
+				node.queue_free()
+	if get_tree().get_nodes_in_group("duel_prop").size() >= 4:
+		_counter_message("場上道具已滿（最多 4 個），等一個消失", 0.6)
+		return
+	super._place(at)
+
+
 func _next_level() -> void:
 	get_tree().paused = false
 	get_tree().change_scene_to_file("res://scenes/spikes_challenge.tscn")
